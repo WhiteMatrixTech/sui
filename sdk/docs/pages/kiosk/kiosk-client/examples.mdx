@@ -7,7 +7,7 @@ Here are some more complete examples on how you'd use the SDK to interact, and w
 For every scenario when we're using Kiosk in dApps, the user who has connected their wallet will either have a kiosk already (and could have more than one)
 or we will have to create it for them.
 
-The SDK supports the scenarios of `silently` creating the kiosk, as part of our PTBs.
+The SDK supports the scenario of `silently` creating the kiosk, as part of our PTBs.
 
 
 ### When the user has a kiosk
@@ -50,7 +50,7 @@ const mint = async () => {
 }
 ```
 
-### When the user doesn't have a kiosk
+### When the user doesn't have a kiosk (silent creation)
 
 ```typescript
 // let's assume that we have created the client somewhere else.
@@ -111,7 +111,7 @@ const levelUp = async () => {
                 arguments: [item],
             });
         });
-        
+
         // approach 2: Borrow + return
         const [item, promise] = kioskClient.borrow(txb, item.type, item.objectId, kiosk, capObject);
 
