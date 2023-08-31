@@ -1,21 +1,23 @@
 # Querying
 
-You can use the `kioskClient` to query kiosk data. It helps you get owned kiosks for an address, as well as fetching all the contents of a specified kiosk.
+You can use the `kioskClient` to query kiosk data. It helps you get owned kiosks for an address, as
+well as fetching all the contents of a specified kiosk.
 
 ## Querying owned Kiosks
 
-Querying owned kiosks returns a list of `kioskOwnerCaps` as well as a list of the `kioskIds`. 
+Querying owned kiosks returns a list of `kioskOwnerCaps` as well as a list of the `kioskIds`.
 
-`KioskOwnerCap` is important in this case, as it is used for managing an owned kiosk as well as purchasing. 
+`KioskOwnerCap` is important in this case, as it is used for managing an owned kiosk as well as
+purchasing.
 
 ```typescript
 const kioskClient = new KioskClient({...});
 
 // We can go ahead and do actions, like querying the owned kiosks for an address.
 const { kioskOwnerCaps, kioskIds } = await kioskClient.getOwnedKiosks('a_sui_address');
-console.log(kioskOwnerCaps); 
+console.log(kioskOwnerCaps);
 
-/** 
+/**
  * An example response for an address that owns 2 kiosks (one of which is personal)
  * [
     {
@@ -38,8 +40,8 @@ console.log(kioskOwnerCaps);
 
 ## Querying Kiosk content
 
-You can follow the sample to query a kiosk's contents. 
-It's recommended to save the `items` structure (`KioskItem`), as it's useful when you're trying to purchase from one.
+You can follow the sample to query a kiosk's contents. It's recommended to save the `items`
+structure (`KioskItem`), as it's useful when you're trying to purchase from one.
 
 `listing` field only applies on items that are listed for sale.
 

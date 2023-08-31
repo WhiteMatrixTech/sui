@@ -1,16 +1,18 @@
 # Transfer Policy Manager
 
-Transfer Policy Client is a way to easily manage a Transfer Policy.
-It allows to create a transfer policy, attach or remove rules from it and withdraw profits.
+Transfer Policy Client is a way to easily manage a Transfer Policy. It allows to create a transfer
+policy, attach or remove rules from it and withdraw profits.
 
-It is decoupled from the Kiosk Client, as this tool is specifically for creators, 
-to easily create a transfer policy, add or remove rules from it and withdraw profits.
+It is decoupled from the Kiosk Client, as this tool is specifically for creators, to easily create a
+transfer policy, add or remove rules from it and withdraw profits.
 
 ## Creating a Transfer Policy Manager
 
-You can follow the example to create a `TransferPolicyManager`. The client currently supports `MAINNET` and `TESTNET`. 
+You can follow the example to create a `TransferPolicyManager`. The client currently supports
+`MAINNET` and `TESTNET`.
 
-*Mysten Kiosk rules & extensions are not supported in devnet due to network wipes (that would require constantly changing the package ids).*
+_Mysten Kiosk rules & extensions are not supported in devnet due to network wipes (that would
+require constantly changing the package ids)._
 
 ```typescript
 import { SuiClient, getFullnodeUrl } from '@mysten/sui.js/client';
@@ -22,7 +24,7 @@ const client = new SuiClient({ url: getFullnodeUrl('testnet') });
 
 // Now we can use it to create a transfer policy manager.
 const transferPolicyManager = new TransferPolicyManager({
-    client,
-    network: Network.TESTNET
+	client,
+	network: Network.TESTNET,
 });
 ```

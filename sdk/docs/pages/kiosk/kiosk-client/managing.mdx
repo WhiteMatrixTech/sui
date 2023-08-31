@@ -2,21 +2,25 @@
 
 `KioskClient` helps in making managing a kiosk simple.
 
-One of the base principles for each operation that includes managing a kiosk, is getting the `KioskOwnerCap` object. Since 
-the SDK supports both personal kiosks & base ones, we've added some helpers to make it simple to support both cases.
+One of the base principles for each operation that includes managing a kiosk, is getting the
+`KioskOwnerCap` object. Since the SDK supports both personal kiosks & base ones, we've added some
+helpers to make it simple to support both cases.
 
-## `KioskOwnerCap` -  Callback approach
+## `KioskOwnerCap` - Callback approach
 
-To be able to support both scenarios, we are wrapping all the kiosk management logic into the `ownedKioskTx` callback:
+To be able to support both scenarios, we are wrapping all the kiosk management logic into the
+`ownedKioskTx` callback:
 
-- If the kiosk is personal, this will borrow the cap, do the transactions in the callback function and then return it automatically.
+- If the kiosk is personal, this will borrow the cap, do the transactions in the callback function
+  and then return it automatically.
 - If the kiosk is not personal, this will just pass in an object argument for all the functions.
 
 The following example will showcase how to use it.
 
-> Before doing any transaction which involves the user's kiosk, you should call the `setSelectedCap` function. It's recommended
-to keep only one instance of `KioskClient` and call the `setSelectedCap` whenever fetching the user's kiosk, or when the user
-has more than one kiosks and wants to use a different one for the transactions.
+> Before doing any transaction which involves the user's kiosk, you should call the `setSelectedCap`
+> function. It's recommended to keep only one instance of `KioskClient` and call the
+> `setSelectedCap` whenever fetching the user's kiosk, or when the user has more than one kiosks and
+> wants to use a different one for the transactions.
 
 ```typescript
 // Cap, as returned from the `kioskClient.getOwnedKiosks('address')` function.
@@ -53,7 +57,8 @@ await kioskClient.ownedKioskTx(txb, async (kiosk, capObject) => {
 
 ## `KioskOwnerCap` - Borrow & return approach
 
-If you don't prefer the callback approach, you could also use the borrow & return approach, as shown below.
+If you don't prefer the callback approach, you could also use the borrow & return approach, as shown
+below.
 
 ```typescript
 // Cap, as returned from the `kioskClient.getOwnedKiosks('address')` function.
@@ -92,19 +97,18 @@ kioskClient.returnOwnerCap(txb, capObject, returnPromise);
 
 ```
 
-
 ## Available functions
 
 ### take
 
-Removes an item from the Kiosk, and returns a Transcation Argument. Can be used for transferring back to an address,
-or use in another transaction.
+Removes an item from the Kiosk, and returns a Transcation Argument. Can be used for transferring
+back to an address, or use in another transaction.
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
 const obj = kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
 // transfer it or do some other action with the `obj`.
-txb.transferObjects([obj], txb.pure('address_to_transfer_the_object')); 
+txb.transferObjects([obj], txb.pure('address_to_transfer_the_object'));
 //... more transactions and/or sign & execute
 ```
 
@@ -124,20 +128,19 @@ Lists an item for sale (the item must be in the kiosk).
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
-const price = 10_000_000_000 // 10 SUI.
+const price = 10_000_000_000; // 10 SUI.
 kioskClient.list(txb, item.type, item.objectId, price, kiosk, capObject);
 //... more transactions and/or sign & execute
 ```
 
-
 ### placeAndList
 
-List an item for sale by first placing it in the kiosk (places the item & lists it for sale).
-It's a short hand for `place()` and `list()`
+List an item for sale by first placing it in the kiosk (places the item & lists it for sale). It's a
+short hand for `place()` and `list()`
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
-const price = 10_000_000_000 // 10 SUI.
+const price = 10_000_000_000; // 10 SUI.
 kioskClient.placeAndList(txb, item.type, item.objectId, price, kiosk, capObject);
 //... more transactions and/or sign & execute
 ```
@@ -152,7 +155,6 @@ kioskClient.delist(txb, item.type, item.objectId, kiosk, capObject);
 //... more transactions and/or sign & execute
 ```
 
-
 ### withdraw
 
 Withdraw (all or specific amount) from a kiosk.
@@ -161,7 +163,7 @@ Withdraw (all or specific amount) from a kiosk.
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
- // The 4th param which is the amount to withdraw is optional, we can not pass it to withdraw all.
+// The 4th param which is the amount to withdraw is optional, we can not pass it to withdraw all.
 kioskClient.withdraw(txb, capObject, amount);
 //... more transactions and/or sign & execute
 ```
@@ -175,35 +177,33 @@ This will convert a kiosk to a `personal` kiosk.
 kioskClient.convertToPersonal(txb, kiosk, capObject);
 //... more transactions and/or sign & execute
 
-
-// Assuming that we know this is a non-personal kiosk, we can even skip 
+// Assuming that we know this is a non-personal kiosk, we can even skip
 // the borrow or callback approach on this one and call it like this.
 // This will use the `selectedCap`'s data to do the convertion.
 kioskClient.convertToPersonal(txb);
 ```
 
-
 ### borrowTx (callback)
 
-Borrows an item from a kiosk. This function follows the `callback` approach, similar to the ownerCap.
-The return of the item happens automatically after the execution of the callback.
+Borrows an item from a kiosk. This function follows the `callback` approach, similar to the
+ownerCap. The return of the item happens automatically after the execution of the callback.
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
 kioskClient.borrowTx(txb, item.type, item.objectId, kiosk, capObject, (item) => {
-    // do something with the item... for example... level it up.
-    txb.moveCall({
-        target: '0xMyGame::hero::level_up',
-        arguments: [item],
-    });
+	// do something with the item... for example... level it up.
+	txb.moveCall({
+		target: '0xMyGame::hero::level_up',
+		arguments: [item],
+	});
 });
 ```
 
-
 ### borrow / return
 
-Similar to `borrowTx`, borrows an item from the kiosk, but returns 2 transaction arguments: `Item` & `Promise`.
-You can use the `Item` in your PTBs, but you must always call the `kioskClient.return()` function with it and the `Promise`.
+Similar to `borrowTx`, borrows an item from the kiosk, but returns 2 transaction arguments: `Item` &
+`Promise`. You can use the `Item` in your PTBs, but you must always call the `kioskClient.return()`
+function with it and the `Promise`.
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
@@ -211,10 +211,9 @@ You can use the `Item` in your PTBs, but you must always call the `kioskClient.r
 const [item, promise] = kioskClient.borrow(txb, item.type, item.objectId, kiosk, capObject);
 
 txb.moveCall({
-    target: '0xMyGame::hero::level_up',
-    arguments: [item],
+	target: '0xMyGame::hero::level_up',
+	arguments: [item],
 });
 
 kioskClient.return(txb, item.type, item, promise, kiosk);
 ```
-

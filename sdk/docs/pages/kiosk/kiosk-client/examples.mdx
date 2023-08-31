@@ -4,11 +4,10 @@ Here are some more complete examples on how you'd use the SDK to interact, and w
 
 ## Minting into kiosk example
 
-For every scenario when we're using Kiosk in dApps, the user who has connected their wallet will either have a kiosk already (and could have more than one)
-or we will have to create it for them.
+For every scenario when we're using Kiosk in dApps, the user who has connected their wallet will
+either have a kiosk already (and could have more than one) or we will have to create it for them.
 
 The SDK supports the scenario of `silently` creating the kiosk, as part of our PTBs.
-
 
 ### When the user has a kiosk
 
@@ -18,12 +17,12 @@ The SDK supports the scenario of `silently` creating the kiosk, as part of our P
 const kioskClient = new KioskClient({...});
 const connectedAddress = '0xAnAddress';
 
-// This function should run when the user connects the wallet. 
+// This function should run when the user connects the wallet.
 // We should re-use the same `KioskClient` instance throughout our dApp.
 const prepareClient = async () => {
     let { kioskOwnerCaps } = await kioskClient.getOwnedKiosks(address);
     // let's assume that the user has only 1 kiosk.
-    // Here, we would need to do some more checks in a realistic scneario. 
+    // Here, we would need to do some more checks in a realistic scneario.
     // And also possible give the user in our dApp a selector for which kiosk he wants to interact with
     // (if he owns more than 1).
     kioskClient.setSelectedCap(kioskOwnerCaps[0])
@@ -75,7 +74,7 @@ const mint = async () => {
             cap // the cap
         ]
     });
-    
+
     // We need to share + transfer the cap for the newly created kiosk.
     txb.shareAndTransferCap(txb, kiosk, cap, connectedAddress);
 
@@ -83,10 +82,7 @@ const mint = async () => {
 }
 ```
 
-
-
 ## Borrowing an item from kiosk to do an action
-
 
 ```typescript
 // let's assume that we have created the client somewhere else.

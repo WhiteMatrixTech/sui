@@ -1,7 +1,7 @@
 # How to Use
 
-After following the introduction steps on how to initialize a client, you can set
-the specified policy (if you already have one), or create a new one. 
+After following the introduction steps on how to initialize a client, you can set the specified
+policy (if you already have one), or create a new one.
 
 ## Available functions
 
@@ -11,10 +11,12 @@ Here's a list of all the available functionality it offers:
 
 You can create a new transfer policy by using the manager, and there are two ways to do it.
 
-> After you create a TransferPolicy, if you want to continue using the manager, you should call `setPolicyAsync` with the created 
-transferPolicyCapID,  or `setPolicyByTypeAsync` by the type & address combination.
+> After you create a TransferPolicy, if you want to continue using the manager, you should call
+> `setPolicyAsync` with the created transferPolicyCapID, or `setPolicyByTypeAsync` by the type &
+> address combination.
 
 #### One-step creation
+
 ```typescript
 // follow steps on introduction to initialize.
 const transferPolicyManager = new TransferPolicyManager({...});
@@ -47,31 +49,35 @@ transferPolicyManager
     .addLockRule(txb)
     .addPersonalKioskRule(txb)
     // This finalizes the transaction, shares the policy & transfers the Cap to the specified address.
-    .shareAndTransferCap(txb, 'address_to_transfer_cap'); 
+    .shareAndTransferCap(txb, 'address_to_transfer_cap');
 // Proceed with Signing & Execute.
 ```
 
+The SDK checks if there's a transfer policy and prevents you from creating it twice. If you want to
+skip the check, you can pass another parameter (`options`), which is an object and pass
+`skipCheck: true`.
 
-The SDK checks if there's a transfer policy and prevents you from creating it twice. If you want to skip the check,
-you can pass another parameter (`options`), which is an object and pass `skipCheck: true`.
+_For one-call creation:_
 
-*For one-call creation:*
 ```typescript
-await transferPolicyManager.createAndShare(txb, itemType, publisher, address, {skipCheck: true});
-```
-*For multi-steps creation:*
-```typescript
-await transferPolicyManager.create(txb, itemType, publisher, {skipCheck: true});
+await transferPolicyManager.createAndShare(txb, itemType, publisher, address, { skipCheck: true });
 ```
 
+_For multi-steps creation:_
+
+```typescript
+await transferPolicyManager.create(txb, itemType, publisher, { skipCheck: true });
+```
 
 ### Manage an existing Transfer Policy
 
-To manage an existing transfer policy, you have to first set the policy, so that the client can know which policy to manage.
+To manage an existing transfer policy, you have to first set the policy, so that the client can know
+which policy to manage.
 
 There are two ways to set it:
 
 1. Set it by passing the TransferPolicyCap object ID.
+
 ```typescript
 // you can set the policy by the cap Id
 const transferPolicyCapId = '0xMyTransferPolicyCapObjectId';
@@ -81,13 +87,16 @@ await transferPolicyManager.setPolicyAsync(transferPolicyCapId);
 ```
 
 2. Set it by passing the item type & address combination
+
 ```typescript
 const itemType = '0xMyGame::hero::Hero';
-await transferPolicyManager.setPolicyByTypeAsync(itemType, 'address_that_owns_it_and_will_execute_the_txb')
+await transferPolicyManager.setPolicyByTypeAsync(
+	itemType,
+	'address_that_owns_it_and_will_execute_the_txb',
+);
 ```
 
 #### Withdraw profits
-
 
 `withdraw(txb: TransactionBlock, amount?: string | bigint | number)`
 
@@ -116,16 +125,17 @@ You can add the royalty rule like the following example.
 
 `percentageToBasisPoints` is a helper to convert a percentage (0.00-100%) to basis Points.
 
-`minAmount` allows to set a minimum amount per transaction, so that the royalty paid is **MAX(percentage, min_amount)**. Use 0 for no minimum amount.
+`minAmount` allows to set a minimum amount per transaction, so that the royalty paid is
+**MAX(percentage, min_amount)**. Use 0 for no minimum amount.
 
 ```typescript
 // ... transferPolicyManager is initialized and policy is set.
 const txb = new TransactionBlock();
-transferPolicyManager
-    .addRoyaltyRule(txb, percentageToBasisPoints(30), 1_000_000_000)
+transferPolicyManager.addRoyaltyRule(txb, percentageToBasisPoints(30), 1_000_000_000);
 ```
 
 You can remove the rule by calling:
+
 ```typescript
 transferPolicyManager.removeRoyaltyRule(txb);
 ```
@@ -139,11 +149,11 @@ You can add the kiosk lock rule like the following example.
 ```typescript
 // ... transferPolicyManager is initialized and policy is set.
 const txb = new TransactionBlock();
-transferPolicyManager
-    .addLockRule(txb)
+transferPolicyManager.addLockRule(txb);
 ```
 
 You can remove the rule by calling:
+
 ```typescript
 transferPolicyManager.removeLockRule(txb);
 ```
@@ -157,11 +167,11 @@ You can add the kiosk lock rule like the following example.
 ```typescript
 // ... transferPolicyManager is initialized and policy is set.
 const txb = new TransactionBlock();
-transferPolicyManager
-    .addPersonalKioskRule(txb)
+transferPolicyManager.addPersonalKioskRule(txb);
 ```
 
 You can remove the rule by calling:
+
 ```typescript
 transferPolicyManager.removePersonalKioskRule(txb);
 ```
@@ -175,18 +185,19 @@ You can add the floor price rule like the following example:
 ```typescript
 // ... transferPolicyManager is initialized and policy is set.
 const txb = new TransactionBlock();
-transferPolicyManager
-    .addFloorPriceRule(txb, 10_000_000_000) // sets 10 SUI as the floor price.
+transferPolicyManager.addFloorPriceRule(txb, 10_000_000_000); // sets 10 SUI as the floor price.
 ```
 
 You can remove the rule by calling:
+
 ```typescript
 transferPolicyManager.removeFloorPriceRule(txb);
 ```
 
 #### Updating rules
 
-If you want to update a rule, call the `remove...` function, and then call `add` again with the new settings.
+If you want to update a rule, call the `remove...` function, and then call `add` again with the new
+settings.
 
 Example:
 
@@ -194,6 +205,6 @@ Example:
 // ... transferPolicyManager is initialized and policy is set.
 const txb = new TransactionBlock();
 transferPolicyManager
-    .removeRoyaltyRule(txb)
-    .addRoyaltyRule(txb, percentageToBasisPoints(20), 1_000_000_000)
+	.removeRoyaltyRule(txb)
+	.addRoyaltyRule(txb, percentageToBasisPoints(20), 1_000_000_000);
 ```

@@ -1,50 +1,52 @@
 # Purchasing from a Kiosk
 
-One of the base functionalities of the SDK, is a seamless purchasing flow, allowing for ease of rules resolving (hiding away the calls).
-The SDK supports all 4 rules by default, and works for `TESTNET` & `MAINNET`.
-
+One of the base functionalities of the SDK, is a seamless purchasing flow, allowing for ease of
+rules resolving (hiding away the calls). The SDK supports all 4 rules by default, and works for
+`TESTNET` & `MAINNET`.
 
 ## How to purchase
 
-The SDK by default places the item in the caller's kiosk, unless there's a lock rule, in which case it locks it.
+The SDK by default places the item in the caller's kiosk, unless there's a lock rule, in which case
+it locks it.
 
 An example of a purchase call is shown below.
-
 
 ```typescript
 // This is an example of the item format that is returned by the `getKiosk` function of the SDK.
 // Here, we assume that there's an existing `listing`.
 const item = {
-    objectId: "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
-    type: "0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>",
-    isLocked: true,
-    listing: {
-        objectId: "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
-        listingId: "0x591d752519d842db3c644ef074bd8f8d7af57ce39ab03f4493ac880e660af80b",
-        isExclusive: false,
-        price: "5000000000"
-    }
-}
+	objectId: '0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4',
+	type: '0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>',
+	isLocked: true,
+	listing: {
+		objectId: '0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4',
+		listingId: '0x591d752519d842db3c644ef074bd8f8d7af57ce39ab03f4493ac880e660af80b',
+		isExclusive: false,
+		price: '5000000000',
+	},
+};
 
 // the KioskID you're purchasing from.
 const kioskWePurchaseFrom = '0xAKioskAddress';
 
 // You should have called `kioskClient.setSelectedCap(cap)` by now.
 await kioskClient.ownedKioskTx(txb, async (ownedKiosk, ownedKioskCap) => {
-    await kioskClient.purchaseAndResolve(
-        txb,
-        item.type,
-        item.objectId,
-        item.listing.price,
-        kioskWePurchaseFrom,
-        ownedKiosk,
-        ownedKioskCap,
-    );
+	await kioskClient.purchaseAndResolve(
+		txb,
+		item.type,
+		item.objectId,
+		item.listing.price,
+		kioskWePurchaseFrom,
+		ownedKiosk,
+		ownedKioskCap,
+	);
 });
 ```
 
-> The function queries for a TransferPolicy for that item, and if a policy is found, it automatically resolves all the rules, one by one.
-You can add a custom rule resolver in the `KioskClient` instance, with instructions on how to resolve a custom rule. Read more in the next section.
+> The function queries for a TransferPolicy for that item, and if a policy is found, it
+> automatically resolves all the rules, one by one. You can add a custom rule resolver in the
+> `KioskClient` instance, with instructions on how to resolve a custom rule. Read more in the next
+> section.
 
 ## Supporting a Custom Rule
 
@@ -113,4 +115,3 @@ type RuleResolvingParams = {
 	extraArgs: Record<string, any>; // extraParams contains more possible {key, values} to pass for custom rules.
 };
 ```
-
