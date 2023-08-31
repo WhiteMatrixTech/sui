@@ -1,0 +1,111 @@
+# Querying
+
+You can use the `kioskClient` to query kiosk data. It helps you get owned kiosks for an address, as well as fetching all the contents of a specified kiosk.
+
+## Querying owned Kiosks
+
+Querying owned kiosks returns a list of `kioskOwnerCaps` as well as a list of the `kioskIds`. 
+
+`KioskOwnerCap` is important in this case, as it is used for managing an owned kiosk as well as purchasing. 
+
+```typescript
+const kioskClient = new KioskClient({...});
+
+// We can go ahead and do actions, like querying the owned kiosks for an address.
+const { kioskOwnerCaps, kioskIds } = await kioskClient.getOwnedKiosks('a_sui_address');
+console.log(kioskOwnerCaps); 
+
+/** 
+ * An example response for an address that owns 2 kiosks (one of which is personal)
+ * [
+    {
+        "isPersonal": false,
+        "digest": "21yhSKYVMPwvmwPQpm1XRjF1LpbP1irmddfccCZaxa87",
+        "version": "8386728",
+        "objectId": "0x8b87a9940b76aad20f73cedb9d9658bdf9e8b107f6c1874465ed35a36474323d",
+        "kioskId": "0xc88725df1d71efae1d283439c81161fab7ace5fe82a5a39dcd42fb4829e10ab9"
+    },
+    {
+        "isPersonal": true,
+        "digest": "5m8Rkbs7VEswZmV41MDVpvduRRJAaBDdoR7JjbEVQ5tT",
+        "version": "8386754",
+        "objectId": "0x98f8bd7c5e9b812861fde15d97b1217e46d5159218ce9d84f0499fe10171f715",
+        "kioskId": "0x29ec4dd337996aae017d4183ad3ee5f78610b86852769cd915c48cda1f4cd068"
+    },
+]
+ */
+```
+
+## Querying Kiosk content
+
+You can follow the sample to query a kiosk's contents. 
+It's recommended to save the `items` structure (`KioskItem`), as it's useful when you're trying to purchase from one.
+
+`listing` field only applies on items that are listed for sale.
+
+```typescript
+const kioskClient = new KioskClient({...});
+
+// We can go ahead and do actions, like querying the owned kiosks for an address.
+const res = await kioskClient.getKiosk(kioskId, {
+    withKioskFields: true, // this flag also returns the `kiosk` object in the response, which includes the base setup
+    withListingPrices: true, // This flag enables / disables the fetching of the listing prices.
+});
+console.log(res);
+/**
+ * An example response of an existing kiosk
+ * {
+    "items": [
+        {
+            "objectId": "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
+            "type": "0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>",
+            "isLocked": true,
+            "listing": {
+                "objectId": "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
+                "listingId": "0x591d752519d842db3c644ef074bd8f8d7af57ce39ab03f4493ac880e660af80b",
+                "isExclusive": false,
+                "price": "5000000000"
+            }
+        },
+        {
+            "objectId": "0xc9d97cacc38c0cf97a8d9e9158634e78cc73084a5e1be3415f070bdce3ec7ee3",
+            "type": "0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>",
+            "isLocked": true
+        },
+        {
+            "objectId": "0xf38df21dfd7a48cfb584bc933d7e069fdec26af60b297646fd26dbc69580a01a",
+            "type": "0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>",
+            "isLocked": true
+        }
+    ],
+    "itemIds": [
+        "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
+        "0xc9d97cacc38c0cf97a8d9e9158634e78cc73084a5e1be3415f070bdce3ec7ee3",
+        "0xf38df21dfd7a48cfb584bc933d7e069fdec26af60b297646fd26dbc69580a01a"
+    ],
+    "listingIds": [
+        "0x591d752519d842db3c644ef074bd8f8d7af57ce39ab03f4493ac880e660af80b"
+    ],
+    "extensions": [],
+    "kiosk": {
+        "id": "4ead8e328489317b765d5502b52176420b4fdb45cd1d8e7ab1c5ebd45fac8b06",
+        "profits": "0",
+        "owner": "fe09cf0b3d77678b99250572624bf74fe3b12af915c5db95f0ed5d755612eb68",
+        "itemCount": 3,
+        "allowExtensions": false
+    }
+}
+ */
+```
+
+## Querying Transfer Policy for Type
+
+```typescript
+const kioskClient = new KioskClient({...});
+
+const itemType = '0xAddress::hero::Hero';
+// We can go ahead and do actions, like querying the owned kiosks for an address.
+const policies = await kioskClient.getTransferPolicies(itemType)
+console.log(policies);
+
+```

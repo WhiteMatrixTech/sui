@@ -1,0 +1,116 @@
+# Purchasing from a Kiosk
+
+One of the base functionalities of the SDK, is a seamless purchasing flow, allowing for ease of rules resolving (hiding away the calls).
+The SDK supports all 4 rules by default, and works for `TESTNET` & `MAINNET`.
+
+
+## How to purchase
+
+The SDK by default places the item in the caller's kiosk, unless there's a lock rule, in which case it locks it.
+
+An example of a purchase call is shown below.
+
+
+```typescript
+// This is an example of the item format that is returned by the `getKiosk` function of the SDK.
+// Here, we assume that there's an existing `listing`.
+const item = {
+    objectId: "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
+    type: "0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::suifrens::SuiFren<0x9e441ccc3cd1233fbadb1de6e2460ce8f75beef3b172c31f46c77744d36d41c2::capy::Capy>",
+    isLocked: true,
+    listing: {
+        objectId: "0x4096902809e950b8da490c1aeb7d2d41eb265e704a8d297bbf96268198b919c4",
+        listingId: "0x591d752519d842db3c644ef074bd8f8d7af57ce39ab03f4493ac880e660af80b",
+        isExclusive: false,
+        price: "5000000000"
+    }
+}
+
+// the KioskID you're purchasing from.
+const kioskWePurchaseFrom = '0xAKioskAddress';
+
+// You should have called `kioskClient.setSelectedCap(cap)` by now.
+await kioskClient.ownedKioskTx(txb, async (ownedKiosk, ownedKioskCap) => {
+    await kioskClient.purchaseAndResolve(
+        txb,
+        item.type,
+        item.objectId,
+        item.listing.price,
+        kioskWePurchaseFrom,
+        ownedKiosk,
+        ownedKioskCap,
+    );
+});
+```
+
+> The function queries for a TransferPolicy for that item, and if a policy is found, it automatically resolves all the rules, one by one.
+You can add a custom rule resolver in the `KioskClient` instance, with instructions on how to resolve a custom rule. Read more in the next section.
+
+## Supporting a Custom Rule
+
+You can easily tweak `purchaseAndResolve` function to support a custom rule.
+
+```typescript
+const kioskClient = new KioskClient({...});
+const myCustomRule = {
+		rule: `0xMyRuleAddress::game_rule::Rule`,
+		network: Network.MAINNET, // or Network.Testnet
+		packageId: `0xMyRuleAddress`,
+        // the resolving function. This is called when calling the `purchaseAndResolve`
+		resolveRuleFunction: (params: RuleResolvingParams) => {
+            // by knowing the params we have here, we can extract the variables we need to resolve this rule.
+            const { txb, itemType, packageId, extraArgs } = params;
+            const { gamePass } = extraArgs;
+            if(!gamePass) throw new Error("GamePass not supplied");
+
+            // calls the game's rule prove function, which could, for example
+            // allow rules to resolve only if the holder has a gamePass object.
+            tx.moveCall({
+                target: `${packageId}::game_rule::prove_pass`,
+                typeArguments: [itemType],
+                arguments: [transferRequest, tx.object(gamePass)],
+            });
+        },
+};
+// this allows rules resolution from the `purchaseAndResolve` function.
+kioskClient.addRuleResolver(myCustomRule);
+
+// You should have called `kioskClient.setSelectedCap(cap)` by now.
+
+// now, if you wanted to call a `purchaseAndResolve`, you could do it like this:
+await kioskClient.ownedKioskTx(txb, async (ownedKiosk, ownedKioskCap) => {
+    await kioskClient.purchaseAndResolve(
+        txb,
+        item.type,
+        item.objectId,
+        item.listing.price,
+        kioskWePurchaseFrom,
+        ownedKiosk,
+        ownedKioskCap,
+        {
+            extraArgs: {
+                gamePass: '0xMyGamePassObjectId'
+            }
+        }
+    );
+});
+```
+
+```typescript
+// For reference, here's the RuleResolvingParams contents.
+type RuleResolvingParams = {
+	txb: TransactionBlock;
+	itemType: string;
+	itemId: string;
+	price: string;
+	policyId: ObjectArgument;
+	kiosk: ObjectArgument;
+	ownedKiosk: ObjectArgument;
+	ownedKioskCap: ObjectArgument;
+	transferRequest: TransactionArgument;
+	purchasedItem: TransactionArgument;
+	packageId: string;
+	extraArgs: Record<string, any>; // extraParams contains more possible {key, values} to pass for custom rules.
+};
+```
+

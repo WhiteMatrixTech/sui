@@ -6,5 +6,9 @@
 	"wallet-kit": {
 		"title": "Wallet Kit",
 		"type": "page"
+	},
+	"kiosk": {
+		"title": "Kiosk SDK",
+		"type": "page"
 	}
 }

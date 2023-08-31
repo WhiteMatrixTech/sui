@@ -1,0 +1,220 @@
+# Managing Owned Kiosk
+
+`KioskClient` helps in making managing a kiosk simple.
+
+One of the base principles for each operation that includes managing a kiosk, is getting the `KioskOwnerCap` object. Since 
+the SDK supports both personal kiosks & base ones, we've added some helpers to make it simple to support both cases.
+
+## `KioskOwnerCap` -  Callback approach
+
+To be able to support both scenarios, we are wrapping all the kiosk management logic into the `ownedKioskTx` callback:
+
+- If the kiosk is personal, this will borrow the cap, do the transactions in the callback function and then return it automatically.
+- If the kiosk is not personal, this will just pass in an object argument for all the functions.
+
+The following example will showcase how to use it.
+
+> Before doing any transaction which involves the user's kiosk, you should call the `setSelectedCap` function. It's recommended
+to keep only one instance of `KioskClient` and call the `setSelectedCap` whenever fetching the user's kiosk, or when the user
+has more than one kiosks and wants to use a different one for the transactions.
+
+```typescript
+// Cap, as returned from the `kioskClient.getOwnedKiosks('address')` function.
+// You do not need to construct this object, you can use the SDK flows.
+const cap =  {
+    isPersonal: true,
+    digest: "5m8Rkbs7VEswZmV41MDVpvduRRJAaBDdoR7JjbEVQ5tT",
+    version: "8386754",
+    objectId: "0x98f8bd7c5e9b812861fde15d97b1217e46d5159218ce9d84f0499fe10171f715",
+    kioskId: "0x29ec4dd337996aae017d4183ad3ee5f78610b86852769cd915c48cda1f4cd068"
+},
+
+// an example item we're taking from the kiosk.
+const item = {
+    type: '0xaddrr::item::Item',
+    objectId: '0xAnObjectId'
+}
+
+const kioskClient = new KioskClient({...});
+const txb = new TransactionBlock();
+
+// You should always set the `selectedCap` when preparing owned kiosk transactions.
+kioskClient.setSelectedCap(cap);
+
+// This is an example of the `take` function, which remove an item from a kiosk.
+await kioskClient.ownedKioskTx(txb, async (kiosk, capObject) => {
+        const obj = kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
+        txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap'));
+
+        // you could also do more transactions here...
+});
+
+```
+
+## `KioskOwnerCap` - Borrow & return approach
+
+If you don't prefer the callback approach, you could also use the borrow & return approach, as shown below.
+
+```typescript
+// Cap, as returned from the `kioskClient.getOwnedKiosks('address')` function.
+// You do not need to construct this object, you can use the SDK flows.
+const cap =  {
+    isPersonal: true,
+    digest: "5m8Rkbs7VEswZmV41MDVpvduRRJAaBDdoR7JjbEVQ5tT",
+    version: "8386754",
+    objectId: "0x98f8bd7c5e9b812861fde15d97b1217e46d5159218ce9d84f0499fe10171f715",
+    kioskId: "0x29ec4dd337996aae017d4183ad3ee5f78610b86852769cd915c48cda1f4cd068"
+},
+
+// an example item we're taking from the kiosk.
+const item = {
+    type: '0xaddrr::item::Item',
+    objectId: '0xAnObjectId'
+}
+
+const kioskClient = new KioskClient({...});
+const txb = new TransactionBlock();
+
+// You should always set the `selectedCap` when preparing owned kiosk transactions.
+kioskClient.setSelectedCap(cap);
+
+// Borrow the `KioskOwnerCap` + a Promise (which is only returned for personal kiosks).
+let [kiosk, capObject, returnPromise] = kioskClient.getOwnerCap(txb);
+
+// we can call any function in between the borrow + return.
+kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
+txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap'));
+
+// you could also do more transactions here...
+
+// return the cap
+kioskClient.returnOwnerCap(txb, capObject, returnPromise);
+
+```
+
+
+## Available functions
+
+### take
+
+Removes an item from the Kiosk, and returns a Transcation Argument. Can be used for transferring back to an address,
+or use in another transaction.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
+// transfer it or do some other action with the `obj`.
+txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap')); 
+//... more transactions and/or sign & execute
+```
+
+### place
+
+Places an item in the kiosk.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+kioskClient.place(txb, item.type, item.objectId, kiosk, capObject);
+//... more transactions and/or sign & execute
+```
+
+### list
+
+Lists an item for sale (the item must be in the kiosk).
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+const price = 10_000_000_000 // 10 SUI.
+kioskClient.list(txb, item.type, item.objectId, price, kiosk, capObject);
+//... more transactions and/or sign & execute
+```
+
+
+### placeAndList
+
+List an item for sale by first placing it in the kiosk (places the item & lists it for sale).
+It's a short hand for `place()` and `list()`
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+const price = 10_000_000_000 // 10 SUI.
+kioskClient.placeAndList(txb, item.type, item.objectId, price, kiosk, capObject);
+//... more transactions and/or sign & execute
+```
+
+### delist
+
+Removes the listing, keeping the item placed in the kiosk.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+kioskClient.delist(txb, item.type, item.objectId, kiosk, capObject);
+//... more transactions and/or sign & execute
+```
+
+
+### withdraw
+
+Withdraw (all or specific amount) from a kiosk.
+
+`amount`: Can be empty, which will withdraw all the funds.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+ // The 4th param which is the amount to withdraw is optional, we can not pass it to withdraw all.
+kioskClient.withdraw(txb, capObject, amount);
+//... more transactions and/or sign & execute
+```
+
+### convertToPersonal
+
+This will convert a kiosk to a `personal` kiosk.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+kioskClient.convertToPersonal(txb, kiosk, capObject);
+//... more transactions and/or sign & execute
+
+
+// Assuming that we know this is a non-personal kiosk, we can even skip 
+// the borrow or callback approach on this one and call it like this.
+// This will use the `selectedCap`'s data to do the convertion.
+kioskClient.convertToPersonal(tx);
+```
+
+
+### borrowTx (callback)
+
+Borrows an item from a kiosk. This function follows the `callback` approach, similar to the ownerCap.
+The return of the item happens automatically after the execution of the callback.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+kioskClient.borrowTx(txb, item.type, item.objectId, kiosk, capObject, (item) => {
+    // do something with the item... for example... level it up.
+    txb.moveCall({
+        target: '0xMyGame::hero::level_up',
+        arguments: [item],
+    });
+});
+```
+
+
+### borrow / return
+
+Similar to `borrowTx`, borrows an item from the kiosk, but returns 2 transaction arguments: `Item` & `Promise`.
+You can use the `Item` in your PTBs, but you must always call the `kioskClient.return()` function with it and the `Promise`.
+
+```typescript
+//... assumes either the callback or borrow + return approach.
+
+const [item, promise] = kioskClient.borrow(txb, item.type, item.objectId, kiosk, capObject);
+
+txb.moveCall({
+    target: '0xMyGame::hero::level_up',
+    arguments: [item],
+});
+
+kioskClient.return(txb, item.type, item, promise, kiosk);
+```
+
