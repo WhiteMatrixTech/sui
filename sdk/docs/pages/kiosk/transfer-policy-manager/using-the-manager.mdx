@@ -57,11 +57,11 @@ you can pass another parameter (`options`), which is an object and pass `skipChe
 
 *For one-call creation:*
 ```typescript
-await transferPolicyManager.createAndShare(tx, itemType, publisher, address, {skipCheck: true});
+await transferPolicyManager.createAndShare(txb, itemType, publisher, address, {skipCheck: true});
 ```
 *For multi-steps creation:*
 ```typescript
-await transferPolicyManager.create(tx, itemType, publisher, {skipCheck: true});
+await transferPolicyManager.create(txb, itemType, publisher, {skipCheck: true});
 ```
 
 
@@ -195,5 +195,5 @@ Example:
 const txb = new TransactionBlock();
 transferPolicyManager
     .removeRoyaltyRule(txb)
-    .addRoyaltyRule(tx, percentageToBasisPoints(20), 1_000_000_000)
+    .addRoyaltyRule(txb, percentageToBasisPoints(20), 1_000_000_000)
 ```
