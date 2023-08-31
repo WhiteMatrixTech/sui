@@ -44,8 +44,8 @@ kioskClient.setSelectedCap(cap);
 // This is an example of the `take` function, which remove an item from a kiosk.
 await kioskClient.ownedKioskTx(txb, async (kiosk, capObject) => {
         const obj = kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
-        txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap'));
 
+        txb.transferObjects([obj], txb.pure('address_to_transfer_the_object'));
         // you could also do more transactions here...
 });
 
@@ -82,8 +82,8 @@ kioskClient.setSelectedCap(cap);
 let [kiosk, capObject, returnPromise] = kioskClient.getOwnerCap(txb);
 
 // we can call any function in between the borrow + return.
-kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
-txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap'));
+const obj = kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
+txb.transferObjects([obj], txb.pure('address_to_transfer_the_object'));
 
 // you could also do more transactions here...
 
@@ -102,9 +102,9 @@ or use in another transaction.
 
 ```typescript
 //... assumes either the callback or borrow + return approach.
-kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
+const obj = kioskClient.take(txb, item.type, item.objectId, kiosk, capObject);
 // transfer it or do some other action with the `obj`.
-txb.transferObjects([obj], txb.pure('address_to_transfer_the_cap')); 
+txb.transferObjects([obj], txb.pure('address_to_transfer_the_object')); 
 //... more transactions and/or sign & execute
 ```
 
