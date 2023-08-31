@@ -83,3 +83,46 @@ const mint = async () => {
 }
 ```
 
+
+
+## Borrowing an item from kiosk to do an action
+
+
+```typescript
+// let's assume that we have created the client somewhere else.
+const kioskClient = new KioskClient({...});
+// let's assume `selectedCap` is set by kioskClient.setSelectedCap(kioskOwnerCaps), similar to first example.
+
+const levelUp = async () => {
+
+    const txb = new TransactionBlock();
+
+    const item = {
+        type: '0x2MyGame::hero::Hero',
+        objectId: '0xMyHeroObjectId'
+    };
+
+    await kioskClient.ownedKioskTx(txb, (kiosk, capObject) => {
+
+        // approach 1: Callback
+        kioskClient.borrowTx(txb, item.type, item.objectId, kiosk, capObject, (item) => {
+            txb.moveCall({
+                target: '0xMyGame::hero::level_up',
+                arguments: [item],
+            });
+        });
+        
+        // approach 2: Borrow + return
+        const [item, promise] = kioskClient.borrow(txb, item.type, item.objectId, kiosk, capObject);
+
+        txb.moveCall({
+            target: '0xMyGame::hero::level_up',
+            arguments: [item],
+        });
+
+        kioskClient.return(txb, item.type, item, promise, kiosk);
+    });
+
+    // or with call ba
+}
+```
