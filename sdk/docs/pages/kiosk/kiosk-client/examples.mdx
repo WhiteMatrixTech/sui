@@ -1,0 +1,85 @@
+# Examples
+
+Here are some more complete examples on how you'd use the SDK to interact, and we'll focus on dApps.
+
+## Minting into kiosk example
+
+For every scenario when we're using Kiosk in dApps, the user who has connected their wallet will either have a kiosk already (and could have more than one)
+or we will have to create it for them.
+
+The SDK supports the scenarios of `silently` creating the kiosk, as part of our PTBs.
+
+
+### When the user has a kiosk
+
+```typescript
+
+// let's assume that we have created the client somewhere else.
+const kioskClient = new KioskClient({...});
+const connectedAddress = '0xAnAddress';
+
+// This function should run when the user connects the wallet. 
+// We should re-use the same `KioskClient` instance throughout our dApp.
+const prepareClient = async () => {
+    let { kioskOwnerCaps } = await kioskClient.getOwnedKiosks(address);
+    // let's assume that the user has only 1 kiosk.
+    // Here, we would need to do some more checks in a realistic scneario. 
+    // And also possible give the user in our dApp a selector for which kiosk he wants to interact with
+    // (if he owns more than 1).
+    kioskClient.setSelectedCap(kioskOwnerCaps[0])
+}
+
+// Now our mint function would be like:
+const mint = async () => {
+    const txb = new TransactionBlock();
+
+    // This would work in both personal and non-personal kiosks.
+    await kioskClient.ownedKioskTx(txb, async (kiosk, cap) => {
+        let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
+        // We'll assume it costs 1 SUI
+        txb.moveCall({
+            target: '0xMyGame::hero::mint',
+            arguments: [
+                coin, // the payment
+                kiosk, // our kiosk
+                cap // the owner Cap.
+            ]
+        });
+    });
+    // now we can continue to sign & execute the transaction.
+}
+```
+
+### When the user doesn't have a kiosk
+
+```typescript
+// let's assume that we have created the client somewhere else.
+const kioskClient = new KioskClient({...});
+
+// Our mint function.
+const mint = async () => {
+    // let's assume this is the connected address. If we were using wallet-kit, that would be `currentAccount?.address`.
+    const connectedAddress = '0xAnAddress';
+    const txb = new TransactionBlock();
+
+    const [kiosk, cap] = kioskClient.create(txb);
+
+    // now let's mint a hero.
+    let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
+    // We'll assume it costs 1 SUI
+    txb.moveCall({
+        target: '0xMyGame::hero::mint',
+        arguments: [
+            coin, // the payment
+            kiosk, // our kiosk
+            cap // the cap
+        ]
+    });
+    
+    // We need to share + transfer the cap for the newly created kiosk.
+    txb.shareAndTransferCap(txb, kiosk, cap, connectedAddress);
+
+    // we can now signAndExecute the transaction!
+}
+```
+
