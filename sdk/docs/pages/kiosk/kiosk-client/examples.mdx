@@ -9,6 +9,10 @@ either have a kiosk already (and could have more than one) or we will have to cr
 
 The SDK supports the scenario of `silently` creating the kiosk, as part of our PTBs.
 
+Let's assume that the mint function of the contract is:
+
+`public fun mint(coin: Coin<SUI>, kiosk: &mut Kiosk, cap: &KioskOwnerCap){...}`
+
 ### When the user has a kiosk
 
 ```typescript
@@ -34,14 +38,15 @@ const mint = async () => {
 
     // This would work in both personal and non-personal kiosks.
     await kioskClient.ownedKioskTx(txb, async (kiosk, cap) => {
-        let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
         // We'll assume it costs 1 SUI
+        let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
+
         txb.moveCall({
             target: '0xMyGame::hero::mint',
             arguments: [
                 coin, // the payment
-                kiosk, // our kiosk
-                cap // the owner Cap.
+                kiosk, // our kiosk that the hero will be placed in
+                cap // our kiosk cap, so that the function can place or lock it.
             ]
         });
     });
@@ -61,17 +66,20 @@ const mint = async () => {
     const connectedAddress = '0xAnAddress';
     const txb = new TransactionBlock();
 
+    // Create function creates a kiosk and the owner Cap.
     const [kiosk, cap] = kioskClient.create(txb);
 
-    // now let's mint a hero.
+  
+    // we prepare the coin object for the payment. (assume it costs 1 SUI to mint a hero)
     let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
-    // We'll assume it costs 1 SUI
+
+    // now let's mint a hero.
     txb.moveCall({
         target: '0xMyGame::hero::mint',
         arguments: [
             coin, // the payment
-            kiosk, // our kiosk
-            cap // the cap
+            kiosk, // We can pass in the kiosk we just created
+            cap // We can also pass in the cap.
         ]
     });
 
