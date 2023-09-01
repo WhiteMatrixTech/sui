@@ -109,5 +109,23 @@ const itemType = '0xAddress::hero::Hero';
 // We can go ahead and do actions, like querying the owned kiosks for an address.
 const policies = await kioskClient.getTransferPolicies(itemType)
 console.log(policies);
+/* An example response
+[
+    {
+        "id": "0xPolicyObjectId",
+        "type": "0x2::transfer_policy::TransferPolicy<0x2Address::hero::Hero>",
+        "owner": {
+            "Shared": {
+                "initial_shared_version": 8386761
+            }
+        },
+        "rules": [
+            "bd8fc1947cf119350184107a3087e2dc27efefa0dd82e25a1f699069fe81a585::kiosk_lock_rule::Rule",
+            "06f6bdd3f2e2e759d8a4b9c252f379f7a05e72dfe4c0b9311cdac27b8eb791b1::personal_kiosk_rule::Rule"
+        ],
+        "balance": "0"
+    }
+]
+*/
 
 ```
