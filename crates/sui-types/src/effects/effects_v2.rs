@@ -8,10 +8,12 @@ use crate::digests::TransactionEventsDigest;
 use crate::effects::{InputSharedObjectKind, TransactionEffectsAPI};
 use crate::execution_status::ExecutionStatus;
 use crate::gas::GasCostSummary;
+use crate::message_envelope::Message;
 use crate::object::Owner;
-use crate::{ObjectID, SequenceNumber};
+use crate::transaction::SenderSignedData;
+use crate::{ObjectID, SequenceNumber, SuiAddress};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 /// The response from processing a transaction or a certified transaction
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
@@ -25,7 +27,8 @@ pub struct TransactionEffectsV2 {
     transaction_digest: TransactionDigest,
     /// The updated gas object reference, as an index into the `changed_objects` vector.
     /// Having a dedicated field for convenient access.
-    gas_object_index: u16,
+    /// System transaction that don't require gas will leave this as None.
+    gas_object_index: Option<u16>,
     /// The digest of the events emitted during execution,
     /// can be None if the transaction does not emit any event.
     events_digest: Option<TransactionEventsDigest>,
@@ -215,12 +218,20 @@ impl TransactionEffectsAPI for TransactionEffectsV2 {
     }
 
     fn gas_object(&self) -> (ObjectRef, Owner) {
-        let entry = &self.changed_objects[self.gas_object_index as usize];
-        match entry.1.output_state {
-            ObjectOut::ObjectWrite(digest, owner) => {
-                ((entry.0, self.lamport_version, digest), owner)
+        if let Some(gas_object_index) = self.gas_object_index {
+            let entry = &self.changed_objects[gas_object_index as usize];
+            match entry.1.output_state {
+                ObjectOut::ObjectWrite(digest, owner) => {
+                    ((entry.0, self.lamport_version, digest), owner)
+                }
+                _ => panic!("Gas object must be an ObjectWrite in changed_objects"),
             }
-            _ => panic!("Gas object must be an ObjectWrite in changed_objects"),
+        } else {
+            // TODO: We should consider having this function to return Option.
+            (
+                (ObjectID::ZERO, SequenceNumber::default(), ObjectDigest::MIN),
+                Owner::AddressOwner(SuiAddress::default()),
+            )
         }
     }
 
@@ -295,6 +306,76 @@ impl TransactionEffectsAPI for TransactionEffectsV2 {
 }
 
 impl TransactionEffectsV2 {
+    pub fn new(
+        status: ExecutionStatus,
+        executed_epoch: EpochId,
+        gas_used: GasCostSummary,
+        shared_objects: Vec<ObjectRef>,
+        transaction_digest: TransactionDigest,
+        lamport_version: SequenceNumber,
+        changed_objects: BTreeMap<ObjectID, EffectsObjectChange>,
+        gas_object: Option<ObjectID>,
+        events_digest: Option<TransactionEventsDigest>,
+        dependencies: Vec<TransactionDigest>,
+    ) -> Self {
+        let unchanged_shared_objects = shared_objects
+            .into_iter()
+            .filter_map(|(id, version, digest)| {
+                if changed_objects.contains_key(&id) {
+                    None
+                } else {
+                    Some((id, UnchangedSharedKind::ReadOnlyRoot((version, digest))))
+                }
+            })
+            .collect();
+        let changed_objects: Vec<_> = changed_objects.into_iter().collect();
+
+        let gas_object_index = gas_object.map(|gas_id| {
+            changed_objects
+                .iter()
+                .position(|(id, _)| id == &gas_id)
+                .unwrap() as u16
+        });
+
+        Self {
+            status,
+            executed_epoch,
+            gas_used,
+            transaction_digest,
+            lamport_version,
+            changed_objects,
+            unchanged_shared_objects,
+            gas_object_index,
+            events_digest,
+            dependencies,
+        }
+    }
+
+    pub fn new_with_tx_and_gas(tx: &SenderSignedData, gas_object: (ObjectRef, Owner)) -> Self {
+        Self {
+            transaction_digest: tx.digest(),
+            lamport_version: gas_object.0 .1,
+            changed_objects: vec![(
+                gas_object.0 .0,
+                EffectsObjectChange {
+                    input_state: ObjectIn::Exist((SequenceNumber::default(), ObjectDigest::MIN)),
+                    output_state: ObjectOut::ObjectWrite(gas_object.0 .2, gas_object.1),
+                    id_operation: IDOperation::None,
+                },
+            )],
+            gas_object_index: Some(0),
+            ..Default::default()
+        }
+    }
+
+    pub fn new_with_tx_and_status(tx: &SenderSignedData, status: ExecutionStatus) -> Self {
+        Self {
+            transaction_digest: tx.digest(),
+            status,
+            ..Default::default()
+        }
+    }
+
     #[cfg(debug_assertions)]
     /// This function demonstrates what's the invariant of the effects.
     /// It also documents the semantics of different combinations in object changes.
@@ -363,8 +444,25 @@ impl TransactionEffectsV2 {
     }
 }
 
+impl Default for TransactionEffectsV2 {
+    fn default() -> Self {
+        Self {
+            status: ExecutionStatus::Success,
+            executed_epoch: 0,
+            gas_used: GasCostSummary::default(),
+            transaction_digest: TransactionDigest::default(),
+            lamport_version: SequenceNumber::default(),
+            changed_objects: vec![],
+            unchanged_shared_objects: vec![],
+            gas_object_index: None,
+            events_digest: None,
+            dependencies: vec![],
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
-enum UnchangedSharedKind {
+pub(crate) enum UnchangedSharedKind {
     /// Read-only shared objects from the input. We don't really need ObjectDigest
     /// for protocol correctness, but it will make it easier to verify untrusted read.
     ReadOnlyRoot(VersionDigest),

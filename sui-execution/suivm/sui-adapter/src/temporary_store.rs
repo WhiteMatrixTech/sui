@@ -21,9 +21,7 @@ use sui_types::storage::BackingStore;
 use sui_types::sui_system_state::{get_sui_system_state_wrapper, AdvanceEpochParams};
 use sui_types::type_resolver::LayoutResolver;
 use sui_types::{
-    base_types::{
-        ObjectDigest, ObjectID, ObjectRef, SequenceNumber, SuiAddress, TransactionDigest,
-    },
+    base_types::{ObjectID, ObjectRef, SequenceNumber, SuiAddress, TransactionDigest},
     error::{ExecutionError, SuiError, SuiResult},
     fp_bail,
     gas::GasCostSummary,
@@ -181,15 +179,7 @@ impl<'backing> TemporaryStore<'backing> {
         // we don't really care about the effects to gas, just use the input for it.
         // Gas coins are guaranteed to be at least size 1 and if more than 1
         // the first coin is where all the others are merged.
-        let updated_gas_object_info = if let Some(coin_id) = gas_charger.gas_coin() {
-            let object = &self.execution_results.written_objects[&coin_id];
-            (object.compute_object_reference(), object.owner)
-        } else {
-            (
-                (ObjectID::ZERO, SequenceNumber::default(), ObjectDigest::MIN),
-                Owner::AddressOwner(SuiAddress::default()),
-            )
-        };
+        let gas_coin = gas_charger.gas_coin();
 
         let object_changes = self.execution_results.get_object_changes();
 
@@ -207,7 +197,7 @@ impl<'backing> TemporaryStore<'backing> {
             *transaction_digest,
             lamport_version,
             object_changes,
-            updated_gas_object_info,
+            gas_coin,
             if inner.events.data.is_empty() {
                 None
             } else {
