@@ -69,7 +69,7 @@ const mint = async () => {
     // Create function creates a kiosk and the owner Cap.
     const [kiosk, cap] = kioskClient.create(txb);
 
-  
+
     // we prepare the coin object for the payment. (assume it costs 1 SUI to mint a hero)
     let coin = txb.splitCoins(txb.gas, [tx.pure(1_000_000_000)]);
 
