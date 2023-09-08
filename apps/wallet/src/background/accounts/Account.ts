@@ -129,7 +129,7 @@ export interface SerializedAccount {
 	readonly selected: boolean;
 	readonly nickname: string | null;
 	readonly createdAt: number;
-	readonly sourceID: string;
+	readonly sourceID?: string;
 }
 
 export interface SerializedUIAccount {
@@ -153,7 +153,7 @@ export interface SerializedUIAccount {
 	readonly selected: boolean;
 	readonly nickname: string | null;
 	readonly isPasswordUnlockable: boolean;
-	readonly sourceID: string;
+	readonly sourceID?: string;
 }
 
 export interface PasswordUnlockableAccount {
