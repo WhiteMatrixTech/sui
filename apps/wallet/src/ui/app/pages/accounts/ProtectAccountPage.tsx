@@ -49,7 +49,7 @@ export function ProtectAccountPage() {
 		) {
 			setShowVerifyPasswordView(hasPasswordAccounts && !isResetting);
 		}
-	}, [hasPasswordAccounts, createMutation.isSuccess, createMutation.isLoading]);
+	}, [hasPasswordAccounts, createMutation.isSuccess, createMutation.isLoading, isResetting]);
 	const createAccountCallback = useCallback(
 		async (password: string, type: CreateType) => {
 			try {
@@ -77,7 +77,6 @@ export function ProtectAccountPage() {
 		return <Navigate to="/" replace />;
 	}
 
-	console.log(showVerifyPasswordView === null && !isResetting);
 	return (
 		<div className="rounded-20 bg-sui-lightest shadow-wallet-content flex flex-col items-center px-6 py-10 overflow-auto w-popup-width h-popup-height">
 			<Loading loading={showVerifyPasswordView === null}>
