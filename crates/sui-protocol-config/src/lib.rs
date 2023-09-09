@@ -284,6 +284,10 @@ struct FeatureFlags {
     // If true, use the new child object format type logging
     #[serde(skip_serializing_if = "is_false")]
     loaded_child_object_format_type: bool,
+
+    // If true, then use CertificateV2 in narwhal.
+    #[serde(skip_serializing_if = "is_false")]
+    narwhal_certificate_v2: bool,
 }
 
 fn is_false(b: &bool) -> bool {
@@ -921,6 +925,10 @@ impl ProtocolConfig {
     // this function only exists for readability in the genesis code.
     pub fn create_authenticator_state_in_genesis(&self) -> bool {
         self.enable_jwk_consensus_updates()
+    }
+
+    pub fn narwhal_certificate_v2(&self) -> bool {
+        self.feature_flags.narwhal_certificate_v2
     }
 }
 
