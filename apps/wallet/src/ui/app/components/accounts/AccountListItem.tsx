@@ -18,7 +18,7 @@ type AccountListItemProps = {
 	showLocked?: boolean;
 };
 
-export function AccountListItem({ account, showLocked = true }: AccountListItemProps) {
+export function AccountListItem({ account, editable, showLocked = true }: AccountListItemProps) {
 	const activeAccount = useActiveAccount();
 	const { data: domainName } = useResolveSuiNSName(account?.address);
 	const { unlockAccount, lockAccount, isLoading, accountToUnlock } = useUnlockAccount();
@@ -50,6 +50,7 @@ export function AccountListItem({ account, showLocked = true }: AccountListItemP
 				) : null
 			}
 			address={account.address}
+			editable={editable}
 		/>
 	);
 }
