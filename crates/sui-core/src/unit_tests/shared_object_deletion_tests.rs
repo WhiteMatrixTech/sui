@@ -33,7 +33,7 @@ use sui_types::committee::EpochId;
 use sui_types::effects::TransactionEffectsAPI;
 use sui_types::error::{ExecutionError, SuiError, UserInputError};
 use sui_types::execution_status::ExecutionFailureStatus::{
-    CertificateDenied, MoveAbort, SharedObjectOperationNotAllowed,
+    InputObjectDeleted, MoveAbort, SharedObjectOperationNotAllowed,
 };
 use sui_types::transaction::{ObjectArg, VerifiedCertificate};
 
@@ -479,9 +479,9 @@ async fn test_mutate_after_delete() {
         .await
         .unwrap();
 
-    assert!(matches!(error.unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -545,9 +545,9 @@ async fn test_mutate_after_delete_enqueued() {
 
     let (effects, error) = res.get(1).unwrap();
 
-    assert!(matches!(error.as_ref().unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.as_ref().unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -558,9 +558,9 @@ async fn test_mutate_after_delete_enqueued() {
 
     let (effects, error) = res.get(2).unwrap();
 
-    assert!(matches!(error.as_ref().unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.as_ref().unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -730,7 +730,7 @@ async fn test_deletion_twice() {
         .await
         .unwrap();
 
-    assert!(matches!(error.unwrap().kind(), CertificateDenied));
+    assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
 
     let new_version = user_1.get_object_latest_version(shared_obj_id);
     assert_eq!(new_version, 4.into());
@@ -835,9 +835,9 @@ async fn test_delete_before_two_mutations() {
         .await
         .unwrap();
 
-    assert!(matches!(error.unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -851,9 +851,9 @@ async fn test_delete_before_two_mutations() {
         .await
         .unwrap();
 
-    assert!(matches!(error.unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -1008,9 +1008,9 @@ async fn test_interspersed_mutations_with_delete() {
         .await
         .unwrap();
 
-    assert!(matches!(error.unwrap().kind(), CertificateDenied));
-    assert!(effects.status().is_err());
-    assert_eq!(effects.deleted().len(), 0);
+    assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
+    assert!(effects.status.is_err());
+    assert_eq!(effects.deleted.len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());

@@ -463,7 +463,7 @@ mod checked {
         TransactionEffects,
         Result<Mode::ExecutionResults, ExecutionError>,
     ) {
-        let error = ExecutionError::new(ExecutionErrorKind::CertificateDenied, None);
+        let error = ExecutionError::new(ExecutionErrorKind::InputObjectDeleted, None);
         let (f_status, command) = error.to_execution_status();
         let status = ExecutionStatus::new_failure(f_status, command);
         let mut execution_result = Err(error);
