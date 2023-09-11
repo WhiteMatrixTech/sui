@@ -97,18 +97,16 @@ impl TestRunner {
         .await
     }
 
-    pub async fn create_owned_object(&mut self) -> TransactionEffectsV1 {
-        let TransactionEffects::V1(effects) = self
-            .execute_owned_transaction({
-                let mut builder = ProgrammableTransactionBuilder::new();
-                move_call! {
-                    builder,
-                    (self.package.0)::o2::create_owned()
-                };
-                builder.finish()
-            })
-            .await;
-        effects
+    pub async fn create_owned_object(&mut self) -> TransactionEffects {
+        self.execute_owned_transaction({
+            let mut builder = ProgrammableTransactionBuilder::new();
+            move_call! {
+                builder,
+                (self.package.0)::o2::create_owned()
+            };
+            builder.finish()
+        })
+        .await
     }
 
     pub fn get_object_latest_version(&mut self, obj_id: ObjectID) -> SequenceNumber {
@@ -357,7 +355,7 @@ impl TestRunner {
     pub async fn enqueue_all_and_execute_all(
         &mut self,
         certificates: Vec<VerifiedCertificate>,
-    ) -> Result<Vec<(TransactionEffects, Option<ExecutionError>)>, SuiError> {
+    ) -> Result<Vec<TransactionEffects>, SuiError> {
         enqueue_all_and_execute_all(&self.authority_state, certificates).await
     }
 
@@ -480,8 +478,8 @@ async fn test_mutate_after_delete() {
         .unwrap();
 
     assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -543,11 +541,10 @@ async fn test_mutate_after_delete_enqueued() {
         .await
         .unwrap();
 
-    let (effects, error) = res.get(1).unwrap();
+    let effects = res.get(1).unwrap();
 
-    assert!(matches!(error.as_ref().unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -556,11 +553,9 @@ async fn test_mutate_after_delete_enqueued() {
     // The gas coin gets mutated
     assert_eq!(effects.mutated().len(), 1);
 
-    let (effects, error) = res.get(2).unwrap();
-
-    assert!(matches!(error.as_ref().unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    let effects = res.get(2).unwrap();
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -836,8 +831,8 @@ async fn test_delete_before_two_mutations() {
         .unwrap();
 
     assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -852,8 +847,8 @@ async fn test_delete_before_two_mutations() {
         .unwrap();
 
     assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
@@ -868,15 +863,15 @@ async fn test_object_lock_conflict() {
     let mut user_1 = TestRunner::new("shared_object_deletion").await;
     let effects = user_1.create_shared_object().await;
 
-    assert_eq!(effects.created.len(), 1);
-    let shared_obj = effects.created[0].0;
+    assert_eq!(effects.created().len(), 1);
+    let shared_obj = effects.created()[0].0;
     let shared_obj_id = shared_obj.0;
     let initial_shared_version = shared_obj.1;
 
     let owned_effects = user_1.create_owned_object().await;
 
-    assert_eq!(owned_effects.created.len(), 1);
-    let owned_obj = owned_effects.created[0].0;
+    assert_eq!(owned_effects.created().len(), 1);
+    let owned_obj = owned_effects.created()[0].0;
 
     let delete_obj_tx = user_1
         .delete_shared_obj_with_owned_tx(owned_obj, shared_obj_id, initial_shared_version)
@@ -904,15 +899,15 @@ async fn test_owned_object_version_increments_on_cert_denied() {
     let mut user_1 = TestRunner::new("shared_object_deletion").await;
     let effects = user_1.create_shared_object().await;
 
-    assert_eq!(effects.created.len(), 1);
-    let shared_obj = effects.created[0].0;
+    assert_eq!(effects.created().len(), 1);
+    let shared_obj = effects.created()[0].0;
     let shared_obj_id = shared_obj.0;
     let initial_shared_version = shared_obj.1;
 
     let owned_effects = user_1.create_owned_object().await;
 
-    assert_eq!(owned_effects.created.len(), 1);
-    let owned_obj = owned_effects.created[0].0;
+    assert_eq!(owned_effects.created().len(), 1);
+    let owned_obj = owned_effects.created()[0].0;
     let owned_obj_id = owned_obj.0;
 
     let delete_obj_tx = user_1
@@ -1009,8 +1004,8 @@ async fn test_interspersed_mutations_with_delete() {
         .unwrap();
 
     assert!(matches!(error.unwrap().kind(), InputObjectDeleted));
-    assert!(effects.status.is_err());
-    assert_eq!(effects.deleted.len(), 0);
+    assert!(effects.status().is_err());
+    assert_eq!(effects.deleted().len(), 0);
 
     assert!(effects.created().is_empty());
     assert!(effects.unwrapped_then_deleted().is_empty());
