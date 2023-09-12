@@ -45,12 +45,20 @@ type WalletDisconnectedAction = {
 	payload?: never;
 };
 
+type WalletPropertiesChangedAction = {
+	type: 'wallet-properties-changed';
+	payload: {
+		updatedAccounts: readonly WalletAccount[];
+	};
+};
+
 export type WalletAction =
 	| WalletConnectionStatusUpdatedAction
 	| WalletConnectedAction
 	| WalletDisconnectedAction
 	| WalletRegisteredAction
-	| WalletUnregisteredAction;
+	| WalletUnregisteredAction
+	| WalletPropertiesChangedAction;
 
 export function walletReducer(state: WalletState, { type, payload }: WalletAction): WalletState {
 	switch (type) {
@@ -96,6 +104,19 @@ export function walletReducer(state: WalletState, { type, payload }: WalletActio
 				accounts: [],
 				currentAccount: null,
 				connectionStatus: 'disconnected',
+			};
+		}
+		case 'wallet-properties-changed': {
+			const isCurrentAccountStillAuthorized = payload.updatedAccounts.find(
+				({ address }) => address === state.currentAccount?.address,
+			);
+			console.log('AUTHORIZED', isCurrentAccountStillAuthorized);
+			return {
+				...state,
+				accounts: payload.updatedAccounts,
+				currentAccount: isCurrentAccountStillAuthorized
+					? state.currentAccount
+					: payload.updatedAccounts[0],
 			};
 		}
 		default:

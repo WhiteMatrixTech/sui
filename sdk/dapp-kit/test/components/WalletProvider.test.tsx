@@ -1,9 +1,12 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { createWalletProviderContextWrapper, registerMockWallet } from '../test-utils.js';
-import { useWallet } from 'dapp-kit/src/index.js';
+import { useConnectWallet, useWallet } from 'dapp-kit/src/index.js';
+import type { Mock } from 'vitest';
+import { createMockAccount } from '../mocks/mockAccount.js';
+import type { StandardEventsOnMethod } from '@mysten/wallet-standard';
 
 describe('WalletProvider', () => {
 	test('the correct wallet and account information is returned on initial render', () => {
@@ -92,5 +95,41 @@ describe('WalletProvider', () => {
 			unregister1();
 			unregister2();
 		});
+	});
+
+	test('accounts are properly updated when changed from a wallet', async () => {
+		const { unregister, mockWallet } = registerMockWallet({
+			walletName: 'Mock Wallet 1',
+			accounts: [createMockAccount(), createMockAccount(), createMockAccount()],
+		});
+
+		// Simulate the number of accounts changing as soon as the change event is registered.
+		const onMock = mockWallet.features['standard:events'].on as Mock;
+		onMock.mockImplementationOnce((...args: Parameters<StandardEventsOnMethod>) => {
+			const [_, eventCallback] = args;
+			eventCallback({
+				accounts: [...mockWallet.accounts.slice(1), createMockAccount()],
+			});
+		});
+
+		const wrapper = createWalletProviderContextWrapper();
+		const { result } = renderHook(
+			() => ({
+				connectWallet: useConnectWallet(),
+				walletInfo: useWallet(),
+			}),
+			{ wrapper },
+		);
+
+		result.current.connectWallet.mutate({ wallet: mockWallet });
+		await waitFor(() => expect(result.current.connectWallet.isSuccess).toBe(true));
+
+		// The active account the user was on was deleted, so we should expect that the user's
+		// new active account is the first wallet account in the new list.
+		expect(result.current.walletInfo.currentAccount).toBeTruthy();
+		expect(result.current.walletInfo.currentAccount!.address).toBe(mockWallet.accounts[1].address);
+		expect(result.current.walletInfo.accounts).toHaveLength(3);
+
+		act(() => unregister());
 	});
 });

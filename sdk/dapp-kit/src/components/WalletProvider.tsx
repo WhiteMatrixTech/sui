@@ -3,7 +3,11 @@
 
 import type { Dispatch, ReactNode } from 'react';
 import { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
-import type { Wallet, WalletWithRequiredFeatures } from '@mysten/wallet-standard';
+import type {
+	StandardEventsChangeProperties,
+	Wallet,
+	WalletWithRequiredFeatures,
+} from '@mysten/wallet-standard';
 import { getWallets } from '@mysten/wallet-standard';
 import { localStorageAdapter } from '../utils/storageAdapters.js';
 import type { StorageAdapter } from '../utils/storageAdapters.js';
@@ -12,6 +16,7 @@ import type { WalletAction, WalletState } from '../reducers/walletReducer.js';
 import { sortWallets } from '../utils/walletUtils.js';
 import { useUnsafeBurnerWallet } from '../hooks/wallet/useUnsafeBurnerWallet.js';
 import { useWalletsChanged } from '../hooks/wallet/useWalletsChanged.js';
+import { useWalletPropertiesChanged } from '../hooks/wallet/useWalletPropertiesChanged.js';
 
 interface WalletProviderProps {
 	/** A list of wallets that are sorted to the top of the wallet list, if they are available to connect to. By default, wallets are sorted by the order they are loaded in. */
@@ -86,10 +91,26 @@ export function WalletProvider({
 		[preferredWallets, requiredFeatures, walletsApi],
 	);
 
+	const onWalletPropertiesChanged = useCallback(({ accounts }: StandardEventsChangeProperties) => {
+		// TODO: We should handle features changing that might make the list of wallets
+		// or even the current wallet incompatible with the dApp.
+		console.log('HERE', accounts);
+		if (accounts) {
+			dispatch({
+				type: 'wallet-properties-changed',
+				payload: {
+					updatedAccounts: accounts,
+				},
+			});
+		}
+	}, []);
+
 	useWalletsChanged({
 		onWalletRegistered,
 		onWalletUnregistered,
 	});
+
+	useWalletPropertiesChanged(walletState.currentWallet, onWalletPropertiesChanged);
 
 	useUnsafeBurnerWallet(enableUnsafeBurner);
 
