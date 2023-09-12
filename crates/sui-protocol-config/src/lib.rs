@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 /// The minimum and maximum protocol versions supported by this build.
 const MIN_PROTOCOL_VERSION: u64 = 1;
-const MAX_PROTOCOL_VERSION: u64 = 24;
+const MAX_PROTOCOL_VERSION: u64 = 25;
 
 // Record history of protocol version allocations here:
 //
@@ -69,6 +69,7 @@ const MAX_PROTOCOL_VERSION: u64 = 24;
 // Version 22: Child object format change.
 // Version 24: Re-enable simple gas conservation checks.
 //             Package publish/upgrade number in a single transaction limited.
+// Version 25: Use CertificateV2 in narwhal
 
 #[derive(Copy, Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProtocolVersion(u64);
@@ -1412,6 +1413,9 @@ impl ProtocolConfig {
                 24 => {
                     cfg.feature_flags.simple_conservation_checks = true;
                     cfg.max_publish_or_upgrade_per_ptb = Some(5);
+                }
+                25 => {
+                    cfg.feature_flags.narwhal_certificate_v2 = true;
                 }
                 // Use this template when making changes:
                 //

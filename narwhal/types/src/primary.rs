@@ -871,7 +871,8 @@ pub enum Certificate {
 // TODO: Revisit if we should not impl Default for Certificate
 impl Default for Certificate {
     fn default() -> Self {
-        Self::V1(CertificateV1::default())
+        // TODO(arun): How do I handle CertficateV2 + protocol upgrade?
+        Self::V2(CertificateV2::default())
     }
 }
 
@@ -939,7 +940,7 @@ impl Certificate {
         }
     }
 
-    pub fn verify(&self, committee: &Committee, worker_cache: &WorkerCache) -> DagResult<()> {
+    pub fn verify(&mut self, committee: &Committee, worker_cache: &WorkerCache) -> DagResult<()> {
         match self {
             Certificate::V1(certificate) => certificate.verify(committee, worker_cache),
             Certificate::V2(certificate) => certificate.verify(committee, worker_cache),
@@ -992,6 +993,7 @@ pub trait CertificateAPI {
 
     // CertificateV2
     fn aggregate_signature_state(&self) -> &AggregateSignatureState;
+    fn set_aggregate_signature_state(&mut self, state: AggregateSignatureState);
 }
 
 #[serde_as]
@@ -1014,6 +1016,10 @@ impl CertificateAPI for CertificateV1 {
     }
 
     fn aggregate_signature_state(&self) -> &AggregateSignatureState {
+        unimplemented!("CertificateV2 field! Use aggregated_signature.");
+    }
+
+    fn set_aggregate_signature_state(&mut self, _state: AggregateSignatureState) {
         unimplemented!("CertificateV2 field! Use aggregated_signature.");
     }
 
@@ -1221,7 +1227,7 @@ impl CertificateV1 {
 // Holds AggregateSignatureBytes but with the added layer to specify if the
 // signature was verified via a leader, verified directly, unverified or
 // unsigned.
-#[derive(Clone, Serialize, Deserialize, MallocSizeOf)]
+#[derive(Clone, Serialize, Deserialize, MallocSizeOf, Debug)]
 pub enum AggregateSignatureState {
     VerifiedViaLeader(AggregateSignatureBytes),
     VerifiedDirectly(AggregateSignatureBytes),
@@ -1251,11 +1257,20 @@ impl CertificateAPI for CertificateV2 {
     }
 
     fn aggregated_signature(&self) -> &AggregateSignatureBytes {
-        unimplemented!("Deprecated CertificateV1 field! Use signature_verification_status.");
+        match &self.aggregate_signature_state {
+            AggregateSignatureState::VerifiedViaLeader(bytes)
+            | AggregateSignatureState::VerifiedDirectly(bytes)
+            | AggregateSignatureState::Unverified(bytes)
+            | AggregateSignatureState::Unsigned(bytes) => bytes,
+        }
     }
 
     fn aggregate_signature_state(&self) -> &AggregateSignatureState {
         &self.aggregate_signature_state
+    }
+
+    fn set_aggregate_signature_state(&mut self, state: AggregateSignatureState) {
+        self.aggregate_signature_state = state;
     }
 
     fn signed_authorities(&self) -> &roaring::RoaringBitmap {
@@ -1419,7 +1434,7 @@ impl CertificateV2 {
 
     /// Verifies the validity of the certificate.
     /// TODO: Output a different type, similar to Sui VerifiedCertificate.
-    pub fn verify(&self, committee: &Committee, worker_cache: &WorkerCache) -> DagResult<()> {
+    pub fn verify(&mut self, committee: &Committee, worker_cache: &WorkerCache) -> DagResult<()> {
         // Ensure the header is from the correct epoch.
         ensure!(
             self.epoch() == committee.epoch(),
@@ -1460,6 +1475,9 @@ impl CertificateV2 {
             .verify_secure(&to_intent_message(certificate_digest), &pks[..])
             .map_err(|_| DagError::InvalidSignature)?;
 
+        self.aggregate_signature_state =
+            AggregateSignatureState::VerifiedDirectly(aggregrate_signature_bytes.clone());
+
         Ok(())
     }
 
@@ -1474,6 +1492,35 @@ impl CertificateV2 {
     pub fn origin(&self) -> AuthorityIdentifier {
         self.header.author()
     }
+}
+
+pub fn validate_certificate_version(
+    certificate: &Certificate,
+    protocol_config: &ProtocolConfig,
+) -> anyhow::Result<()> {
+    // TODO(arun) insert expected protoocl version in comment
+    // If network has advanced to using version {?}, which sets narwhal_certificate_v2
+    // to true, we will start using CertificateV2 locally and so we will only accept
+    // CertificateV2 from the network. Otherwise CertificateV1 is used.
+    match certificate {
+        Certificate::V1(_) => {
+            if protocol_config.narwhal_certificate_v2() {
+                return Err(anyhow::anyhow!(format!(
+                    "Received {certificate:?} but network is at {:?} and this batch version is no longer supported",
+                    protocol_config.version
+                )));
+            }
+        }
+        Certificate::V2(_) => {
+            if !protocol_config.narwhal_certificate_v2() {
+                return Err(anyhow::anyhow!(format!(
+                    "Received {certificate:?} but network is at {:?} and this batch version is not supported yet",
+                    protocol_config.version
+                )));
+            }
+        }
+    };
+    Ok(())
 }
 
 #[derive(

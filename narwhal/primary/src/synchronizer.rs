@@ -33,6 +33,7 @@ use tokio::{
     time::{sleep, timeout},
 };
 use tracing::{debug, error, instrument, trace, warn};
+use types::AggregateSignatureState;
 use types::{
     ensure,
     error::{AcceptNotification, DagError, DagResult},
@@ -59,6 +60,7 @@ struct Inner {
     authority_id: AuthorityIdentifier,
     /// Committee of the current epoch.
     committee: Committee,
+    protocol_config: ProtocolConfig,
     /// The worker information cache.
     worker_cache: WorkerCache,
     /// The depth of the garbage collector.
@@ -342,6 +344,7 @@ impl Synchronizer {
         let inner = Arc::new(Inner {
             authority_id,
             committee: committee.clone(),
+            protocol_config: protocol_config.clone(),
             worker_cache,
             gc_depth,
             gc_round: AtomicU64::new(gc_round),
@@ -633,7 +636,11 @@ impl Synchronizer {
 
     /// Checks if the certificate is valid and can potentially be accepted into the DAG.
     // TODO: produce a different type after sanitize, e.g. VerifiedCertificate.
-    pub fn sanitize_certificate(&self, certificate: &Certificate) -> DagResult<()> {
+    pub fn sanitize_certificate(
+        &self,
+        certificate: &mut Certificate,
+        verified_via_leader: bool,
+    ) -> DagResult<()> {
         ensure!(
             self.inner.committee.epoch() == certificate.epoch(),
             DagError::InvalidEpoch {
@@ -647,15 +654,36 @@ impl Synchronizer {
             gc_round < certificate.round(),
             DagError::TooOld(certificate.digest().into(), certificate.round(), gc_round)
         );
-        // Verify the certificate (and the embedded header).
-        certificate
-            .verify(&self.inner.committee, &self.inner.worker_cache)
-            .map_err(DagError::from)
+
+        if !verified_via_leader {
+            // Verify the certificate (and the embedded header).
+            certificate
+                .verify(&self.inner.committee, &self.inner.worker_cache)
+                .map_err(DagError::from)?;
+
+            if self.inner.protocol_config.narwhal_certificate_v2() {
+                certificate.set_aggregate_signature_state(
+                    AggregateSignatureState::VerifiedDirectly(
+                        certificate.aggregated_signature().clone(),
+                    ),
+                );
+            }
+        } else {
+            if self.inner.protocol_config.narwhal_certificate_v2() {
+                certificate.set_aggregate_signature_state(
+                    AggregateSignatureState::VerifiedViaLeader(
+                        certificate.aggregated_signature().clone(),
+                    ),
+                );
+            }
+        }
+
+        Ok(())
     }
 
     async fn process_certificate_internal(
         &self,
-        certificate: Certificate,
+        mut certificate: Certificate,
         sanitize: bool,
         early_suspend: bool,
     ) -> DagResult<()> {
@@ -681,7 +709,7 @@ impl Synchronizer {
             }
         }
         if sanitize {
-            self.sanitize_certificate(&certificate)?;
+            self.sanitize_certificate(&mut certificate, false)?;
         }
 
         debug!(

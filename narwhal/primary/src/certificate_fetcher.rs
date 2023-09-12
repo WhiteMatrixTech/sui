@@ -6,12 +6,14 @@ use anemo::Request;
 use config::{AuthorityIdentifier, Committee};
 use consensus::consensus::ConsensusRound;
 use crypto::NetworkPublicKey;
+use fastcrypto::hash::Hash;
 use futures::{stream::FuturesUnordered, StreamExt};
 use itertools::Itertools;
 use mysten_metrics::metered_channel::Receiver;
 use mysten_metrics::{monitored_future, monitored_scope, spawn_logged_monitored_task};
 use network::PrimaryToPrimaryRpc;
 use rand::{rngs::ThreadRng, seq::SliceRandom};
+use std::collections::HashSet;
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
@@ -438,27 +440,47 @@ async fn process_certificates_helper(
     // certificates. For byzantine failures, the check will not be effective anyway.
     let _verify_scope = monitored_scope("VerifyingFetchedCertificates");
     let all_certificates = response.certificates;
-    let verify_tasks = all_certificates
+
+    // TODO(arun): Verify certificate version is correct
+    let mut all_parents = HashSet::new();
+    for cert in &all_certificates {
+        for parent_id in cert.header().parents() {
+            all_parents.insert(parent_id.clone());
+        }
+    }
+
+    let mut annotated_certs: Vec<(Certificate, bool)> = vec![];
+    for c in all_certificates {
+        let cert_id = c.digest();
+        let is_leader = !all_parents.contains(&cert_id);
+        annotated_certs.push((c, is_leader));
+    }
+
+    let verify_tasks = annotated_certs
         .chunks(VERIFY_CERTIFICATES_BATCH_SIZE)
-        .map(|certs| {
-            let certs = certs.to_vec();
+        .map(|chunk| {
+            let mut certs_with_flags = chunk.to_vec();
             let sync = synchronizer.clone();
             let metrics = metrics.clone();
             // Use threads dedicated to computation heavy work.
             spawn_blocking(move || {
                 let now = Instant::now();
-                for c in &certs {
-                    sync.sanitize_certificate(c)?;
+                for (c, is_leader) in &mut certs_with_flags {
+                    sync.sanitize_certificate(c, !*is_leader)?;
                 }
                 metrics
                     .certificate_fetcher_total_verification_us
                     .inc_by(now.elapsed().as_micros() as u64);
+                let certs = certs_with_flags.into_iter().map(|(c, _)| c).collect();
                 Ok::<Vec<Certificate>, DagError>(certs)
             })
         })
         .collect_vec();
     // Process verified certificates in the same order as received.
     for task in verify_tasks {
+        // Any certificates that fail to be verified should cancel the entire
+        // batch of fetched certficates that are being processed to protect
+        // against byzantine validators.
         let certificates = task.await.map_err(|_| DagError::Canceled)??;
         let now = Instant::now();
         for cert in certificates {

@@ -306,6 +306,7 @@ async fn test_request_vote_has_missing_parents() {
     let handler = PrimaryReceiverHandler {
         authority_id: target_id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,
@@ -474,6 +475,7 @@ async fn test_request_vote_accept_missing_parents() {
     let handler = PrimaryReceiverHandler {
         authority_id: target_id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,
@@ -630,6 +632,7 @@ async fn test_request_vote_missing_batches() {
     let handler = PrimaryReceiverHandler {
         authority_id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,
@@ -777,6 +780,7 @@ async fn test_request_vote_already_voted() {
     let handler = PrimaryReceiverHandler {
         authority_id: id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,
@@ -965,6 +969,7 @@ async fn test_fetch_certificates_handler() {
     let handler = PrimaryReceiverHandler {
         authority_id: id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,
@@ -1142,6 +1147,7 @@ async fn test_request_vote_created_at_in_future() {
     let handler = PrimaryReceiverHandler {
         authority_id: id,
         committee: fixture.committee(),
+        protocol_config: latest_protocol_version(),
         worker_cache: worker_cache.clone(),
         synchronizer: synchronizer.clone(),
         signature_service,

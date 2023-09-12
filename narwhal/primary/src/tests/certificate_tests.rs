@@ -29,8 +29,7 @@ fn test_empty_certificate_verification() {
         Vec::new()
     )
     .is_err());
-
-    let certificate =
+    let mut certificate =
         Certificate::new_unsigned(&latest_protocol_version(), &committee, header, Vec::new())
             .unwrap();
     assert!(certificate
@@ -52,7 +51,7 @@ fn test_valid_certificate_verification() {
         signatures.push((vote.author(), vote.signature().clone()));
     }
 
-    let certificate =
+    let mut certificate =
         Certificate::new_unverified(&latest_protocol_version(), &committee, header, signatures)
             .unwrap();
 
@@ -83,7 +82,7 @@ fn test_certificate_insufficient_signatures() {
     )
     .is_err());
 
-    let certificate =
+    let mut certificate =
         Certificate::new_unsigned(&latest_protocol_version(), &committee, header, signatures)
             .unwrap();
 
@@ -111,7 +110,7 @@ fn test_certificate_validly_repeated_public_keys() {
     let certificate_res =
         Certificate::new_unverified(&latest_protocol_version(), &committee, header, signatures);
     assert!(certificate_res.is_ok());
-    let certificate = certificate_res.unwrap();
+    let mut certificate = certificate_res.unwrap();
 
     assert!(certificate
         .verify(&committee, &fixture.worker_cache())
@@ -167,7 +166,7 @@ proptest::proptest! {
             signatures.push((vote.author(), vote.signature().clone()));
         }
 
-        let certificate = Certificate::new_unverified(&latest_protocol_version(), &committee, header, signatures).unwrap();
+        let mut certificate = Certificate::new_unverified(&latest_protocol_version(), &committee, header, signatures).unwrap();
 
         assert!(certificate
             .verify(&committee, &fixture.worker_cache())
