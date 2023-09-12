@@ -110,7 +110,6 @@ export function walletReducer(state: WalletState, { type, payload }: WalletActio
 			const isCurrentAccountStillAuthorized = payload.updatedAccounts.find(
 				({ address }) => address === state.currentAccount?.address,
 			);
-			console.log('AUTHORIZED', isCurrentAccountStillAuthorized);
 			return {
 				...state,
 				accounts: payload.updatedAccounts,

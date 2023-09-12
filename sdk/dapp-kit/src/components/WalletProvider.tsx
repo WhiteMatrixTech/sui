@@ -94,7 +94,6 @@ export function WalletProvider({
 	const onWalletPropertiesChanged = useCallback(({ accounts }: StandardEventsChangeProperties) => {
 		// TODO: We should handle features changing that might make the list of wallets
 		// or even the current wallet incompatible with the dApp.
-		console.log('HERE', accounts);
 		if (accounts) {
 			dispatch({
 				type: 'wallet-properties-changed',
