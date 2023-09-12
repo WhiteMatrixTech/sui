@@ -124,7 +124,7 @@ describe('WalletProvider', () => {
 		result.current.connectWallet.mutate({ wallet: mockWallet });
 		await waitFor(() => expect(result.current.connectWallet.isSuccess).toBe(true));
 
-		// The active account the user was on was deleted, so we should expect that the user's
+		// The user's active account was deleted, so we should expect that the user's
 		// new active account is the first wallet account in the new list.
 		expect(result.current.walletInfo.currentAccount).toBeTruthy();
 		expect(result.current.walletInfo.currentAccount!.address).toBe(mockWallet.accounts[1].address);
