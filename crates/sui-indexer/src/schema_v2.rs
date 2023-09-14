@@ -15,7 +15,6 @@ diesel::table! {
         epoch -> Int8,
         network_total_transactions -> Int8,
         previous_checkpoint_digest -> Nullable<Bytea>,
-        end_of_epoch -> Bool,
         tx_digests -> Array<Nullable<Bytea>>,
         timestamp_ms -> Int8,
         total_gas_cost -> Int8,
@@ -50,6 +49,8 @@ diesel::table! {
         leftover_storage_fund_inflow-> Nullable<Int8>,
         new_total_stake -> Nullable<Int8>,
         epoch_commitments -> Nullable<Bytea>,
+        next_epoch_reference_gas_price -> Nullable<Int8>,
+        next_epoch_protocol_version -> Nullable<Int8>,
     }
 }
 
