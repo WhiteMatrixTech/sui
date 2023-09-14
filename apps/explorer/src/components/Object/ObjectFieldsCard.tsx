@@ -11,7 +11,7 @@ import { ScrollToViewCard } from './ScrollToViewCard';
 import { getFieldTypeValue } from './utils';
 import { FieldsCard, FieldCollapsible, FieldsContainer } from '~/components/Object/FieldsUtils';
 import { Banner } from '~/ui/Banner';
-import { DescriptionItem } from '~/ui/DescriptionList';
+import { Description } from '~/ui/Description';
 
 const DEFAULT_OPEN_FIELDS = 3;
 
@@ -123,7 +123,7 @@ export function ObjectFieldsCard({
 						}}
 					/>
 				</Combobox>
-				<div className="mt-4 flex h-80 flex-col gap-4 overflow-y-auto pl-3 pr-2">
+				<div className="mt-4 flex h-44 flex-col gap-4 overflow-y-auto pl-3 pr-2 md:h-80">
 					{normalizedStructData?.fields?.map(({ name, type }) => (
 						<button
 							type="button"
@@ -131,19 +131,11 @@ export function ObjectFieldsCard({
 							className="mt-0.5"
 							onClick={() => onFieldsNameClick(name)}
 						>
-							<DescriptionItem
-								contentJustify="end"
-								labelWidth="md"
-								title={
-									<Text variant="body/medium" color="steel-darker">
-										{name}
-									</Text>
-								}
-							>
+							<Description title={name} titleVariant="body/medium" titleColor="steel-darker">
 								<Text uppercase variant="subtitle/normal" color="steel" truncate>
 									{getFieldTypeValue(type, objectType).displayName}
 								</Text>
-							</DescriptionItem>
+							</Description>
 						</button>
 					))}
 				</div>
