@@ -132,7 +132,6 @@ impl AuthenticatorTrait for ZkLoginAuthenticator {
             self.max_epoch,
             &extended_pk_bytes,
             &aux_verify_data.oidc_provider_jwks,
-            &aux_verify_data.zk_login_env,
         )
         .map_err(|e| SuiError::InvalidSignature {
             error: e.to_string(),

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use fastcrypto_zkp::bn254::zk_login::{JwkId, OIDCProvider, JWK};
-use fastcrypto_zkp::bn254::zk_login_api::ZkLoginEnv;
 use futures::future::{join_all, select, Either};
 use futures::FutureExt;
 use itertools::izip;
@@ -59,7 +58,7 @@ use prometheus::IntCounter;
 use std::str::FromStr;
 use sui_execution::{self, Executor};
 use sui_macros::fail_point;
-use sui_protocol_config::{Chain, ProtocolConfig, ProtocolVersion};
+use sui_protocol_config::{ProtocolConfig, ProtocolVersion};
 use sui_storage::mutex_table::{MutexGuard, MutexTable};
 use sui_types::effects::{TransactionEffects, TransactionEffectsAPI};
 use sui_types::executable_transaction::{
@@ -470,11 +469,6 @@ impl AuthorityPerEpochStore {
             expensive_safety_check_config,
         );
 
-        let zklogin_env = match chain_identifier.chain() {
-            Chain::Mainnet => ZkLoginEnv::Prod,
-            _ => ZkLoginEnv::Test,
-        };
-
         let supported_providers = protocol_config
             .zklogin_supported_providers()
             .iter()
@@ -485,7 +479,6 @@ impl AuthorityPerEpochStore {
             committee.clone(),
             signature_verifier_metrics,
             supported_providers,
-            zklogin_env,
         );
 
         let authenticator_state_exists = epoch_start_configuration

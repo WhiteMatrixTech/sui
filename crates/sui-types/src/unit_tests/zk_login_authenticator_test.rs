@@ -8,7 +8,6 @@ use crate::{
 };
 use fastcrypto::traits::ToFromBytes;
 use fastcrypto_zkp::bn254::zk_login::{parse_jwks, JwkId, OIDCProvider, JWK};
-use fastcrypto_zkp::bn254::zk_login_api::ZkLoginEnv;
 use im::hashmap::HashMap as ImHashMap;
 use shared_crypto::intent::{Intent, IntentMessage};
 
@@ -27,31 +26,21 @@ fn zklogin_authenticator_jwk() {
         .collect();
 
     // Construct the required info to verify a zk login authenticator, jwks, supported providers list and env (prod/test).
-    let aux_verify_data =
-        VerifyParams::new(parsed.clone(), vec![OIDCProvider::Twitch], ZkLoginEnv::Test);
+    let aux_verify_data = VerifyParams::new(parsed.clone(), vec![OIDCProvider::Twitch]);
 
     let res =
         authenticator.verify_authenticator(&intent_msg, user_address, Some(0), &aux_verify_data);
     // Verify passes.
     assert!(res.is_ok());
 
-    // Pass in env = prod fails to verify.
-    let aux_verify_data =
-        VerifyParams::new(parsed.clone(), vec![OIDCProvider::Twitch], ZkLoginEnv::Prod);
-    let res =
-        authenticator.verify_authenticator(&intent_msg, user_address, Some(0), &aux_verify_data);
-    assert!(res.is_err());
-
     // Pass in supported list does not contain twitch fails to verify.
-    let aux_verify_data =
-        VerifyParams::new(parsed.clone(), vec![OIDCProvider::Google], ZkLoginEnv::Test);
+    let aux_verify_data = VerifyParams::new(parsed.clone(), vec![OIDCProvider::Google]);
     let res =
         authenticator.verify_authenticator(&intent_msg, user_address, Some(0), &aux_verify_data);
     assert!(res.is_err());
 
     // Epoch expired fails to verify.
-    let aux_verify_data =
-        VerifyParams::new(parsed.clone(), vec![OIDCProvider::Twitch], ZkLoginEnv::Test);
+    let aux_verify_data = VerifyParams::new(parsed.clone(), vec![OIDCProvider::Twitch]);
     assert!(authenticator
         .verify_authenticator(&intent_msg, user_address, Some(11), &aux_verify_data)
         .is_err());
@@ -66,7 +55,7 @@ fn zklogin_authenticator_jwk() {
         .collect();
 
     // Correct kid can no longer be found fails to verify.
-    let aux_verify_data = VerifyParams::new(parsed, vec![OIDCProvider::Twitch], ZkLoginEnv::Test);
+    let aux_verify_data = VerifyParams::new(parsed, vec![OIDCProvider::Twitch]);
     assert!(authenticator
         .verify_authenticator(&intent_msg, user_address, Some(0), &aux_verify_data)
         .is_err());

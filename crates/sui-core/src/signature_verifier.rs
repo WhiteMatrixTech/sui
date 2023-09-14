@@ -4,7 +4,6 @@
 use either::Either;
 use fastcrypto_zkp::bn254::zk_login::JwkId;
 use fastcrypto_zkp::bn254::zk_login::{OIDCProvider, JWK};
-use fastcrypto_zkp::bn254::zk_login_api::ZkLoginEnv;
 use futures::pin_mut;
 use im::hashmap::HashMap as ImHashMap;
 use itertools::izip;
@@ -113,8 +112,6 @@ pub struct SignatureVerifier {
 struct ZkLoginParams {
     /// A list of supported OAuth providers for ZkLogin.
     pub supported_providers: Vec<OIDCProvider>,
-    /// The environment (prod/test) the code runs in. It decides which verifying key to use in fastcrypto.
-    pub env: ZkLoginEnv,
 }
 
 impl SignatureVerifier {
@@ -123,7 +120,6 @@ impl SignatureVerifier {
         batch_size: usize,
         metrics: Arc<SignatureVerifierMetrics>,
         supported_providers: Vec<OIDCProvider>,
-        env: ZkLoginEnv,
     ) -> Self {
         Self {
             committee,
@@ -140,7 +136,6 @@ impl SignatureVerifier {
             metrics,
             zk_login_params: ZkLoginParams {
                 supported_providers,
-                env,
             },
         }
     }
@@ -149,15 +144,8 @@ impl SignatureVerifier {
         committee: Arc<Committee>,
         metrics: Arc<SignatureVerifierMetrics>,
         supported_providers: Vec<OIDCProvider>,
-        zklogin_env: ZkLoginEnv,
     ) -> Self {
-        Self::new_with_batch_size(
-            committee,
-            MAX_BATCH_SIZE,
-            metrics,
-            supported_providers,
-            zklogin_env,
-        )
+        Self::new_with_batch_size(committee, MAX_BATCH_SIZE, metrics, supported_providers)
     }
 
     /// Verifies all certs, returns Ok only if all are valid.
@@ -327,7 +315,6 @@ impl SignatureVerifier {
                 let aux_data = VerifyParams::new(
                     jwks,
                     self.zk_login_params.supported_providers.clone(),
-                    self.zk_login_params.env.clone(),
                 );
                 signed_tx.verify_message_signature(&aux_data)
             })
@@ -428,7 +415,7 @@ pub fn batch_verify_certificates(
     certs: &[CertifiedTransaction],
 ) -> Vec<SuiResult> {
     // certs.data() is assumed to be verified already by the caller.
-    let verify_params = VerifyParams::new(Default::default(), Vec::new(), Default::default());
+    let verify_params = VerifyParams::new(Default::default(), Vec::new());
     match batch_verify(committee, certs, &[]) {
         Ok(_) => vec![Ok(()); certs.len()],
 

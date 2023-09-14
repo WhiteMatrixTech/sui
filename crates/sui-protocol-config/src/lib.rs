@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 /// The minimum and maximum protocol versions supported by this build.
 const MIN_PROTOCOL_VERSION: u64 = 1;
-const MAX_PROTOCOL_VERSION: u64 = 24;
+const MAX_PROTOCOL_VERSION: u64 = 25;
 
 // Record history of protocol version allocations here:
 //
@@ -1453,6 +1453,17 @@ impl ProtocolConfig {
                         cfg.max_jwk_votes_per_validator_per_epoch = Some(240);
                         cfg.max_age_of_jwk_in_epochs = Some(1);
                     }
+                }
+                25 => {
+                    // Enable zkLogin for all providers in all networks.
+                    cfg.feature_flags.zklogin_supported_providers = BTreeSet::from([
+                        "Google".to_string(),
+                        "Facebook".to_string(),
+                        "Twitch".to_string(),
+                    ]);
+                    cfg.feature_flags.zklogin_auth = true;
+
+                    cfg.feature_flags.enable_jwk_consensus_updates = true;
                 }
                 // Use this template when making changes:
                 //

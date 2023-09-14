@@ -12,7 +12,6 @@ use fastcrypto::{
     traits::{EncodeDecodeBase64, ToFromBytes},
 };
 use fastcrypto_zkp::bn254::zk_login::{JwkId, OIDCProvider, JWK};
-use fastcrypto_zkp::bn254::zk_login_api::ZkLoginEnv;
 use im::hashmap::HashMap as ImHashMap;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -24,19 +23,16 @@ pub struct VerifyParams {
     // map from JwkId (iss, kid) => JWK
     pub oidc_provider_jwks: ImHashMap<JwkId, JWK>,
     pub supported_providers: Vec<OIDCProvider>,
-    pub zk_login_env: ZkLoginEnv,
 }
 
 impl VerifyParams {
     pub fn new(
         oidc_provider_jwks: ImHashMap<JwkId, JWK>,
         supported_providers: Vec<OIDCProvider>,
-        zk_login_env: ZkLoginEnv,
     ) -> Self {
         Self {
             oidc_provider_jwks,
             supported_providers,
-            zk_login_env,
         }
     }
 }
