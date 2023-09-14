@@ -1,0 +1,8 @@
+error[E01003]: invalid modifier
+  ┌─ tests/move_2024/parser/ability_modifier_infix_and_postfix.move:4:34
+  │
+4 │     struct Foo has copy, drop {} has store;
+  │                ---               ^^^ Invalid ability declaration. Abilities cannot be declared in infix and postfix positions simultaneously
+  │                │                  
+  │                Ability declaration previously given here
+

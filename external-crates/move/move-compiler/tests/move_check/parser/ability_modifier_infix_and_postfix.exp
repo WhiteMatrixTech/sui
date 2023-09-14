@@ -1,0 +1,17 @@
+error[E01002]: unexpected token
+  ┌─ tests/move_check/parser/ability_modifier_infix_and_postfix.move:5:34
+  │
+5 │     struct Foo has copy, drop {} has store;
+  │                                  ^^^
+  │                                  │
+  │                                  Unexpected 'has'
+  │                                  Expected a module member: 'spec', 'use', 'friend', 'const', 'fun', or 'struct'
+
+error[E13001]: feature is not supported in specified edition
+  ┌─ tests/move_check/parser/ability_modifier_infix_and_postfix.move:5:34
+  │
+5 │     struct Foo has copy, drop {} has store;
+  │                                  ^^^  not supported by current edition 'legacy', only '2024.alpha' support this feature
+  │
+  = You can update the edition in the 'Move.toml', or via command line flag if invoking the compiler directly.
+

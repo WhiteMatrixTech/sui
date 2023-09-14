@@ -28,6 +28,7 @@ pub struct Edition {
 #[derive(PartialEq, Eq, Clone, Copy, Debug, PartialOrd, Ord)]
 pub enum FeatureGate {
     PublicPackage,
+    PostFixAbilities,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, PartialOrd, Ord, Default)]
@@ -41,7 +42,12 @@ pub enum Flavor {
 // Entry
 //**************************************************************************************************
 
-pub fn check_feature(env: &mut CompilationEnv, edition: Edition, feature: &FeatureGate, loc: Loc) {
+pub fn check_feature(
+    env: &mut CompilationEnv,
+    edition: Edition,
+    feature: &FeatureGate,
+    loc: Loc,
+) -> bool {
     if !edition.supports(feature) {
         let valid_editions = valid_editions_for_feature(feature)
             .into_iter()
@@ -63,6 +69,9 @@ pub fn check_feature(env: &mut CompilationEnv, edition: Edition, feature: &Featu
             or via command line flag if invoking the compiler directly.",
         );
         env.add_diag(diag);
+        false
+    } else {
+        true
     }
 }
 
@@ -115,7 +124,7 @@ impl Edition {
             Self::LEGACY => BTreeSet::new(),
             Self::E2024_ALPHA => {
                 let mut features = self.prev().unwrap().features();
-                features.extend([FeatureGate::PublicPackage]);
+                features.extend([FeatureGate::PublicPackage, FeatureGate::PostFixAbilities]);
                 features
             }
             _ => self.unknown_edition_panic(),
