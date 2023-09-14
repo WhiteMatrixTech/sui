@@ -177,3 +177,43 @@ async fn test_create_authenticator_state_object() {
         });
     }
 }
+
+// This test is intended to look for forks caused by conflicting / repeated JWK votes from
+// validators.
+#[cfg(msim)]
+#[sim_test]
+async fn test_conflicting_jwks() {
+    use fastcrypto_zkp::bn254::zk_login::{JwkId, JWK};
+    use std::sync::Arc;
+
+    sui_node::set_jwk_injector(Arc::new(|_authority, provider| {
+        use rand::Rng;
+        // generate random (and possibly conflicting) id/key pairings.
+        let id_num = rand::thread_rng().gen_range(1..=4);
+        let key_num = rand::thread_rng().gen_range(1..=4);
+
+        let id = JwkId {
+            iss: provider.get_config().iss,
+            kid: format!("kid{}", id_num),
+        };
+
+        let jwk = JWK {
+            kty: "kty".to_string(),
+            e: format!("e{}", key_num),
+            n: "n".to_string(),
+            alg: "alg".to_string(),
+        };
+
+        Ok(vec![(id, jwk)])
+    }));
+
+    let test_cluster = TestClusterBuilder::new()
+        .with_epoch_duration_ms(45000)
+        .with_jwk_fetch_interval(Duration::from_secs(5))
+        .build()
+        .await;
+
+    for _ in 0..5 {
+        test_cluster.wait_for_epoch(None).await;
+    }
+}

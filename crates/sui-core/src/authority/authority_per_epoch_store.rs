@@ -29,7 +29,7 @@ use sui_types::transaction::{
     AuthenticatorStateUpdate, CertifiedTransaction, SenderSignedData, SharedInputObject,
     TransactionDataAPI, VerifiedCertificate, VerifiedSignedTransaction,
 };
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, error_span, info, trace, warn};
 use typed_store::rocks::{
     default_db_options, DBBatch, DBMap, DBOptions, MetricConf, TypedStoreError,
 };
@@ -495,6 +495,9 @@ impl AuthorityPerEpochStore {
             authenticator_state_exists && protocol_config.enable_jwk_consensus_updates();
 
         if authenticator_state_enabled {
+            let span = error_span!("initialize_authenticator_state", ?epoch_id);
+            let _guard = span.enter();
+
             info!("authenticator_state enabled");
             let authenticator_state = get_authenticator_state(&store)
                 .expect("Read cannot fail")
